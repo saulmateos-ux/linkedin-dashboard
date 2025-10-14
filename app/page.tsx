@@ -2,6 +2,7 @@ import { getStats, getTopPosts, getEngagementOverTime } from '@/lib/db';
 import StatsCard from '@/components/StatsCard';
 import EngagementChart from '@/components/EngagementChart';
 import PostsTable from '@/components/PostsTable';
+import RefreshButton from '@/components/RefreshButton';
 
 export const revalidate = 3600; // Revalidate every hour
 
@@ -15,6 +16,12 @@ export default async function Home() {
 
   return (
     <div className="space-y-8">
+      {/* Refresh Button */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
+        <RefreshButton />
+      </div>
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard

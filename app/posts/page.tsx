@@ -1,6 +1,7 @@
 import { getPosts } from '@/lib/db';
 import PostsTable from '@/components/PostsTable';
 import SearchBar from '@/components/SearchBar';
+import ExportButton from '@/components/ExportButton';
 
 export const revalidate = 3600; // Revalidate every hour
 
@@ -41,6 +42,7 @@ export default async function PostsPage({ searchParams }: PageProps) {
             {total.toLocaleString()} total posts
           </p>
         </div>
+        <ExportButton search={search} sortBy={sortBy} order={order} />
       </div>
 
       {/* Search and Filters */}

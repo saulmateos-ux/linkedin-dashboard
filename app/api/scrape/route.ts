@@ -88,35 +88,39 @@ export async function POST(request: Request) {
 
     for (const rawPost of posts) {
       try {
+        // Type assertion for post data
+        const post = rawPost as Record<string, unknown>;
+
         // DEBUG: Log first post to see structure
         if (newPosts === 0) {
           console.log('=== SAMPLE RAW POST ===');
-          console.log(JSON.stringify(rawPost, null, 2));
+          console.log(JSON.stringify(post, null, 2));
           console.log('======================');
         }
 
         // Extract post ID from URL
-        const postUrl = rawPost.postUrl || rawPost.linkedinUrl || rawPost.url;
+        const postUrl = (post.postUrl || post.linkedinUrl || post.url) as string | undefined;
         const activityMatch = postUrl?.match(/activity-(\d+)/);
         const postId = activityMatch ? activityMatch[1] : `post_${Date.now()}`;
 
         // Prepare post data
-        const content = rawPost.text || rawPost.content || '';
+        const content = String(post.text || post.content || '');
         const contentPreview = content.length > 100 ? content.substring(0, 100) + '...' : content;
 
         // Parse engagement (check engagement object first, like CLI does!)
-        const likes = parseInt(
-          rawPost.engagement?.likes || rawPost.likesCount || rawPost.likes || '0'
-        ) || 0;
-        const comments = parseInt(
-          rawPost.engagement?.comments || rawPost.commentsCount || rawPost.comments || '0'
-        ) || 0;
-        const shares = parseInt(
-          rawPost.engagement?.shares || rawPost.sharesCount || rawPost.shares || rawPost.reposts || '0'
-        ) || 0;
-        const views = parseInt(
-          rawPost.engagement?.impressions || rawPost.viewsCount || rawPost.views || '0'
-        ) || 0;
+        const engagement = (post.engagement as Record<string, unknown>) || {};
+        const likes = parseInt(String(
+          engagement.likes || post.likesCount || post.likes || '0'
+        )) || 0;
+        const comments = parseInt(String(
+          engagement.comments || post.commentsCount || post.comments || '0'
+        )) || 0;
+        const shares = parseInt(String(
+          engagement.shares || post.sharesCount || post.shares || post.reposts || '0'
+        )) || 0;
+        const views = parseInt(String(
+          engagement.impressions || post.viewsCount || post.views || '0'
+        )) || 0;
         const engagementTotal = likes + comments + shares;
 
         console.log(`Post ${postId}: likes=${likes}, comments=${comments}, shares=${shares}`);
@@ -153,12 +157,12 @@ export async function POST(request: Request) {
 
         // Extract published date (handle object or string)
         let publishedAt: Date | string = new Date();
-        const dateField = rawPost.publishedAt || rawPost.postedAt;
+        const dateField = post.publishedAt || post.postedAt;
 
         if (dateField) {
-          if (typeof dateField === 'object' && dateField.date) {
+          if (typeof dateField === 'object' && (dateField as Record<string, unknown>).date) {
             // Extract date from object { date: "...", timestamp: ... }
-            publishedAt = dateField.date;
+            publishedAt = String((dateField as Record<string, unknown>).date);
           } else if (typeof dateField === 'string') {
             // Use string directly
             publishedAt = dateField;
@@ -170,8 +174,8 @@ export async function POST(request: Request) {
           postUrl,
           content,
           contentPreview,
-          rawPost.authorName || rawPost.author || 'Unknown',
-          rawPost.authorUsername || 'unknown',
+          String(post.authorName || post.author || 'Unknown'),
+          String(post.authorUsername || 'unknown'),
           publishedAt,
           likes,
           comments,
@@ -180,7 +184,7 @@ export async function POST(request: Request) {
           engagementTotal,
           views > 0 ? (engagementTotal / views) * 100 : 0,
           JSON.stringify(hashtags),
-          rawPost.images?.length > 0 ? 'image' : 'text',
+          (post.images as unknown[] | undefined)?.length ? 'image' : 'text',
         ];
 
         const result = await pool.query(query, values);

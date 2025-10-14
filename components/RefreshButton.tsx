@@ -35,8 +35,9 @@ export default function RefreshButton() {
       } else {
         setError(data.error || data.message || 'Scrape failed');
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to trigger scrape');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to trigger scrape';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

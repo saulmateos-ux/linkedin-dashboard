@@ -76,7 +76,7 @@ export async function POST(request: Request) {
     }
 
     // Filter actual posts (not reactions/comments)
-    const posts = items.filter((item: any) =>
+    const posts = items.filter((item: Record<string, unknown>) =>
       item.type === 'post' && (item.postUrl || item.linkedinUrl)
     );
 
@@ -209,12 +209,13 @@ export async function POST(request: Request) {
       runId: run.id,
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Scrape error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
         error: 'Scrape failed',
-        message: error.message || 'Unknown error',
+        message: errorMessage,
       },
       { status: 500 }
     );

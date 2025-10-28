@@ -26,6 +26,7 @@ export default function PostsTable({ posts, title = "Top Posts", showAll = false
           <thead>
             <tr className="border-b border-gray-200">
               <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Content</th>
+              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Author</th>
               <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Published</th>
               <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">👍 Likes</th>
               <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">💬 Comments</th>
@@ -45,6 +46,20 @@ export default function PostsTable({ posts, title = "Top Posts", showAll = false
                   >
                     {post.content_preview || post.content?.substring(0, 100) || '(No content)'}
                   </a>
+                </td>
+                <td className="py-3 px-4 text-sm text-gray-600 whitespace-nowrap">
+                  {post.profile_id ? (
+                    <Link
+                      href={`/profiles/${post.profile_id}/background`}
+                      className="text-gray-900 hover:text-blue-600 font-medium"
+                    >
+                      {post.author_name || post.author_username || 'Unknown'}
+                    </Link>
+                  ) : (
+                    <span className="text-gray-900 font-medium">
+                      {post.author_name || post.author_username || 'Unknown'}
+                    </span>
+                  )}
                 </td>
                 <td className="py-3 px-4 text-sm text-gray-600 whitespace-nowrap">
                   {new Date(post.published_at).toLocaleDateString('en-US', {

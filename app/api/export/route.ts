@@ -17,6 +17,11 @@ export async function GET(request: NextRequest) {
       offset: 0,
     });
 
+    // Debug: Log first post to see author_name structure
+    if (posts.length > 0) {
+      console.log('Sample post author_name:', typeof posts[0].author_name, posts[0].author_name);
+    }
+
     // Generate CSV
     const headers = [
       'Content',
@@ -42,10 +47,20 @@ export async function GET(request: NextRequest) {
           day: 'numeric'
         });
 
+        // Extract author name - handle if it's stored as object
+        let authorName = '';
+        if (typeof post.author_name === 'string') {
+          authorName = post.author_name;
+        } else if (typeof post.author_name === 'object' && post.author_name !== null) {
+          // If it's an object, try to extract the name field
+          const authorObj = post.author_name as Record<string, unknown>;
+          authorName = (authorObj.name as string) || (authorObj.authorName as string) || '';
+        }
+
         return [
           `"${content}"`,
           publishedDate,
-          `"${post.author_name || ''}"`,
+          `"${authorName}"`,
           post.likes,
           post.comments,
           post.shares,

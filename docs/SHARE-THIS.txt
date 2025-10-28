@@ -1,0 +1,87 @@
+========================================
+LINKEDIN ANALYTICS DATABASE ACCESS
+========================================
+
+Hi! You've been given read-only access to a LinkedIn analytics database.
+
+📊 What's Inside:
+- 1,184+ LinkedIn posts with engagement metrics
+- 12 tracked profiles (personal, team, competitors, companies)
+- 4 organized workspaces
+
+🔐 Access Level:
+- READ ONLY (you can query but not modify anything)
+- Secure connection via SSL/TLS
+- 100% safe to explore
+
+========================================
+QUICK START (Copy & Paste to Claude)
+========================================
+
+Step 1: Tell Claude to run this command:
+--------------------------------------
+
+echo 'export LINKEDIN_DB="postgresql://claude_analyst:analyst_readonly_2025%21secure@ep-wild-flower-adh2ui1j-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require"' >> ~/.zshrc && source ~/.zshrc
+
+NOTE: The %21 is URL encoding for ! (required for special characters)
+
+
+Step 2: Test the connection:
+--------------------------------------
+
+psql $LINKEDIN_DB -c "SELECT COUNT(*) FROM posts;"
+
+
+Step 3: Start analyzing!
+--------------------------------------
+
+Ask Claude things like:
+- "What are the top 10 most liked posts?"
+- "Show me trending hashtags"
+- "Compare engagement across profiles"
+- "What posting times work best?"
+
+========================================
+IF PSQL NOT INSTALLED
+========================================
+
+Mac users - tell Claude to run:
+brew install postgresql
+
+Linux users - tell Claude to run:
+sudo apt-get install postgresql-client
+
+========================================
+EXAMPLE QUERIES TO TRY
+========================================
+
+# Top posts by engagement
+psql $LINKEDIN_DB -c "SELECT author_name, LEFT(content, 80), num_likes FROM posts ORDER BY num_likes DESC LIMIT 10;"
+
+# View all profiles
+psql $LINKEDIN_DB -c "SELECT display_name, profile_type FROM profiles;"
+
+# Trending hashtags
+psql $LINKEDIN_DB -c "SELECT UNNEST(REGEXP_MATCHES(content, '#(\w+)', 'g')) as hashtag, COUNT(*) FROM posts GROUP BY hashtag ORDER BY count DESC LIMIT 20;"
+
+========================================
+FULL DOCUMENTATION
+========================================
+
+For complete documentation including:
+- Full database schema
+- Advanced query examples
+- Troubleshooting guide
+
+See: docs/analyst-database-access.md
+
+========================================
+NEED HELP?
+========================================
+
+Just ask Claude in your session:
+"I have access to a LinkedIn analytics database via $LINKEDIN_DB. Help me get started."
+
+Claude will guide you through everything!
+
+========================================

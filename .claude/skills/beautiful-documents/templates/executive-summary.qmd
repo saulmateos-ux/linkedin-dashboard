@@ -1,0 +1,84 @@
+---
+title: "GAIN Executive Summary"
+subtitle: "[Period] Performance Dashboard"
+date: "[Date]"
+format:
+  typst:
+    papersize: us-letter
+    mainfont: "Helvetica Neue"
+    fontsize: 11pt
+    margin:
+      x: 0.75in
+      y: 0.75in
+    keep-tex: false
+    toc: false
+---
+
+# [Period] Key Performance Indicators
+
+::: {.grid}
+::: {.g-col-6}
+## Financial Metrics
+
+| Metric | Actual | Target | Variance |
+|--------|--------|--------|----------|
+| **Total Collections** | [value] | [value] | [%] |
+| **Net Cash Flow** | [value] | [value] | [%] |
+| **Operating Margin** | [%] | [%] | [bps] |
+| **Revenue** | [value] | [value] | [%] |
+
+:::
+
+::: {.g-col-6}
+## Operating Metrics
+
+| Metric | Actual | Prior Period | YoY |
+|--------|--------|--------------|-----|
+| **Total Invoices** | [value] | [value] | [%] |
+| **Active Providers** | [value] | [value] | [%] |
+| **Avg Invoice Value** | [value] | [value] | [%] |
+| **Collection Rate** | [%] | [%] | [bps] |
+
+:::
+:::
+
+---
+
+## Key Highlights
+
+::: {.callout-note}
+### [Highlight 1 Title]
+[Brief description of major achievement or milestone]
+:::
+
+::: {.callout-note}
+### [Highlight 2 Title]
+[Brief description of major achievement or milestone]
+:::
+
+::: {.callout-note}
+### [Highlight 3 Title]
+[Brief description of major achievement or milestone]
+:::
+
+---
+
+## Strategic Priorities
+
+1. **[Priority 1]**: [One-sentence description]
+2. **[Priority 2]**: [One-sentence description]
+3. **[Priority 3]**: [One-sentence description]
+
+---
+
+## Risk Dashboard
+
+::: {.callout-warning}
+### Items Requiring Attention
+- **[Risk/Issue 1]**: [Brief status/mitigation]
+- **[Risk/Issue 2]**: [Brief status/mitigation]
+:::
+
+---
+
+*Prepared by: [Author Name], [Title] | Date: [Date]*

@@ -1,0 +1,209 @@
+---
+title: "GAIN Financial Report"
+subtitle: "[Period] Financial Analysis"
+author: "[Author Name], CFO"
+date: "[Date]"
+format:
+  typst:
+    papersize: us-letter
+    mainfont: "Helvetica Neue"
+    fontsize: 11pt
+    margin:
+      x: 1in
+      y: 1.5in
+    keep-tex: false
+    toc: true
+    section-numbering: "1.1"
+---
+
+# Executive Summary
+
+[High-level financial performance overview: revenues, expenses, cash flow, key drivers]
+
+::: {.callout-note}
+## Bottom Line
+[One-sentence summary of financial health]
+:::
+
+{{< pagebreak >}}
+
+# Income Statement Analysis
+
+## Revenue Performance
+
+[Revenue narrative: actual vs. budget, YoY trends, drivers]
+
+| Revenue Category | [Period] Actual | [Period] Budget | Variance | YoY |
+|------------------|-----------------|-----------------|----------|-----|
+| **Pure Servicing** | [value] | [value] | [%] | [%] |
+| **Partial Advance** | [value] | [value] | [%] | [%] |
+| **Full Purchase** | [value] | [value] | [%] | [%] |
+| **Other Revenue** | [value] | [value] | [%] | [%] |
+| **Total Revenue** | **[value]** | **[value]** | **[%]** | **[%]** |
+
+: Revenue Breakdown {#tbl-revenue}
+
+### Revenue Commentary
+
+[Detailed narrative: product mix, pricing trends, seasonality, one-time items]
+
+## Expense Analysis
+
+[Expense narrative: spending discipline, variance drivers, efficiency metrics]
+
+| Expense Category | [Period] Actual | [Period] Budget | Variance | % of Revenue |
+|------------------|-----------------|-----------------|----------|--------------|
+| **Personnel** | [value] | [value] | [%] | [%] |
+| **Technology** | [value] | [value] | [%] | [%] |
+| **Marketing** | [value] | [value] | [%] | [%] |
+| **G&A** | [value] | [value] | [%] | [%] |
+| **Total OpEx** | **[value]** | **[value]** | **[%]** | **[%]** |
+
+: Operating Expense Breakdown {#tbl-expenses}
+
+### Expense Commentary
+
+[Detailed narrative: headcount changes, tech investments, efficiency initiatives]
+
+## Profitability
+
+| Metric | [Period] | Prior Period | YoY | Target |
+|--------|----------|--------------|-----|--------|
+| **Gross Profit** | [value] | [value] | [%] | [value] |
+| **Gross Margin** | [%] | [%] | [bps] | [%] |
+| **EBITDA** | [value] | [value] | [%] | [value] |
+| **EBITDA Margin** | [%] | [%] | [bps] | [%] |
+| **Net Income** | [value] | [value] | [%] | [value] |
+
+: Profitability Metrics {#tbl-profitability}
+
+{{< pagebreak >}}
+
+# Balance Sheet Analysis
+
+## Assets
+
+[Asset narrative: AR trends, cash position, capital deployment]
+
+| Asset Category | [Period End] | Prior Period | Change | % of Total |
+|----------------|--------------|--------------|--------|------------|
+| **Cash** | [value] | [value] | [%] | [%] |
+| **Accounts Receivable** | [value] | [value] | [%] | [%] |
+| **Other Current Assets** | [value] | [value] | [%] | [%] |
+| **Total Current Assets** | **[value]** | **[value]** | **[%]** | **[%]** |
+| **Fixed Assets** | [value] | [value] | [%] | [%] |
+| **Other Assets** | [value] | [value] | [%] | [%] |
+| **Total Assets** | **[value]** | **[value]** | **[%]** | **100%** |
+
+: Asset Summary {#tbl-assets}
+
+## Liabilities and Equity
+
+[Liability narrative: debt levels, payables management, equity changes]
+
+| Category | [Period End] | Prior Period | Change | % of Total |
+|----------|--------------|--------------|--------|------------|
+| **Accounts Payable** | [value] | [value] | [%] | [%] |
+| **Accrued Expenses** | [value] | [value] | [%] | [%] |
+| **Current Debt** | [value] | [value] | [%] | [%] |
+| **Total Current Liabilities** | **[value]** | **[value]** | **[%]** | **[%]** |
+| **Long-term Debt** | [value] | [value] | [%] | [%] |
+| **Other Liabilities** | [value] | [value] | [%] | [%] |
+| **Total Liabilities** | **[value]** | **[value]** | **[%]** | **[%]** |
+| **Shareholders' Equity** | **[value]** | **[value]** | **[%]** | **[%]** |
+
+: Liability & Equity Summary {#tbl-liabilities}
+
+## Key Ratios
+
+| Ratio | [Period] | Target | Status |
+|-------|----------|--------|--------|
+| **Current Ratio** | [value] | > 1.5 | [✓/✗] |
+| **Quick Ratio** | [value] | > 1.0 | [✓/✗] |
+| **Debt-to-Equity** | [value] | < 2.0 | [✓/✗] |
+| **Days Sales Outstanding** | [value] days | < 45 | [✓/✗] |
+
+: Financial Health Ratios {#tbl-ratios}
+
+{{< pagebreak >}}
+
+# Cash Flow Analysis
+
+[Cash flow narrative: operations, investing, financing activities]
+
+| Cash Flow Category | [Period] | Prior Period | Change |
+|-------------------|----------|--------------|--------|
+| **Operating Activities** |  |  |  |
+| Net Income | [value] | [value] | [value] |
+| Depreciation/Amortization | [value] | [value] | [value] |
+| Change in AR | [value] | [value] | [value] |
+| Change in AP | [value] | [value] | [value] |
+| Other Working Capital | [value] | [value] | [value] |
+| **Cash from Operations** | **[value]** | **[value]** | **[value]** |
+|  |  |  |  |
+| **Investing Activities** |  |  |  |
+| CapEx | [value] | [value] | [value] |
+| Other Investments | [value] | [value] | [value] |
+| **Cash from Investing** | **[value]** | **[value]** | **[value]** |
+|  |  |  |  |
+| **Financing Activities** |  |  |  |
+| Debt Issuance/(Repayment) | [value] | [value] | [value] |
+| Equity Issuance | [value] | [value] | [value] |
+| **Cash from Financing** | **[value]** | **[value]** | **[value]** |
+|  |  |  |  |
+| **Net Change in Cash** | **[value]** | **[value]** | **[value]** |
+| **Ending Cash Balance** | **[value]** | **[value]** | **[value]** |
+
+: Cash Flow Statement {#tbl-cashflow}
+
+## Cash Flow Commentary
+
+[Detailed narrative: operating cash generation, capital spending, debt service]
+
+{{< pagebreak >}}
+
+# Scenario Analysis
+
+## Base Case
+
+[Base case assumptions and projections]
+
+## Upside Case
+
+[Upside drivers and potential impact]
+
+::: {.callout-tip}
+### Upside Catalysts
+- [Catalyst 1]
+- [Catalyst 2]
+- [Catalyst 3]
+:::
+
+## Downside Case
+
+[Downside risks and mitigation strategies]
+
+::: {.callout-warning}
+### Risk Factors
+- [Risk 1]
+- [Risk 2]
+- [Risk 3]
+:::
+
+{{< pagebreak >}}
+
+# Recommendations
+
+1. **[Recommendation 1]**: [Rationale and expected impact]
+
+2. **[Recommendation 2]**: [Rationale and expected impact]
+
+3. **[Recommendation 3]**: [Rationale and expected impact]
+
+---
+
+**Prepared by**: [Author Name], [Title]
+**Date**: [Date]
+**Period Covered**: [Period]
+
+*This document contains confidential financial information.*

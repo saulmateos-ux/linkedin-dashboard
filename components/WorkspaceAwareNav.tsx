@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 
 interface NavLinkProps {
@@ -12,7 +12,6 @@ interface NavLinkProps {
 
 function NavLink({ href, children, className }: NavLinkProps) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { currentWorkspace } = useWorkspace();
 
   // Build URL with workspace parameter if one is selected

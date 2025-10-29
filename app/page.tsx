@@ -1,16 +1,8 @@
+import { Suspense } from 'react';
+import AppHeader from '@/layout/AppHeader';
+import AppSidebar from '@/layout/AppSidebar';
 import { getStats, getEngagementOverTime, getProfiles, getPrimaryProfile, getWorkspace, getWorkspaceStats, getWorkspacePosts, getWorkspaceProfiles, getEnhancedStats, getProfilePerformanceLeaderboard, getContentInsights, getTopPostsEnhanced } from '@/lib/db';
-import MuiStatsCard from '@/components/mui/MuiStatsCard';
-import MuiEngagementChart from '@/components/mui/MuiEngagementChart';
-import MuiPostsTable from '@/components/mui/MuiPostsTable';
-import ProfileLeaderboard from '@/components/ProfileLeaderboard';
-import ContentInsights from '@/components/ContentInsights';
-import ViewModeToggle from '@/components/ViewModeToggle';
-import RefreshButton from '@/components/RefreshButton';
-import ProfileSelector from '@/components/ProfileSelector';
-import LimitSelector from '@/components/LimitSelector';
 import Link from 'next/link';
-import { Box, Grid, Typography, Card, CardContent, Button } from '@mui/material';
-import { Article, TrendingUp, Rocket, Comment } from '@mui/icons-material';
 
 export const revalidate = 3600; // Revalidate every hour
 
@@ -52,17 +44,16 @@ export default async function Home({ searchParams }: PageProps) {
 
   // Parse limit with default of 25
   const limit = limitParam ? parseInt(limitParam) : 25;
-  // Validate limit (must be one of the allowed values)
   const validLimit = [10, 25, 50, 100].includes(limit) ? limit : 25;
 
-  // Determine view mode (top or recent)
+  // Determine view mode
   const viewMode = viewParam === 'recent' ? 'recent' : 'top';
 
   // Check if workspace is selected
   const workspaceId = workspaceIdParam ? parseInt(workspaceIdParam) : null;
   const workspace = workspaceId ? await getWorkspace(workspaceId) : null;
 
-  // Get profiles (filtered by workspace if applicable)
+  // Get profiles
   const profiles = workspace
     ? await getWorkspaceProfiles(workspace.id)
     : await getProfiles();
@@ -72,7 +63,6 @@ export default async function Home({ searchParams }: PageProps) {
   if (profileIdParam && profileIdParam !== 'all') {
     currentProfileId = parseInt(profileIdParam);
   } else if (!profileIdParam && profiles.length > 0 && !workspace) {
-    // Default to primary profile if no param and no workspace
     const primaryProfile = await getPrimaryProfile();
     if (primaryProfile) {
       currentProfileId = primaryProfile.id;
@@ -80,17 +70,14 @@ export default async function Home({ searchParams }: PageProps) {
   }
 
   // Fetch data based on workspace or profile
-  let stats, enhancedStats, topPosts, engagementData, profileLeaderboard, contentInsights;
+  let stats, enhancedStats, topPosts;
 
   if (workspace) {
-    // Fetch workspace-specific data with enhanced analytics
     const workspaceStats = await getWorkspaceStats(workspace.id);
-
-    // Determine sort based on view mode
     const sortBy = viewMode === 'recent' ? 'published_at' : 'engagement_total';
     const order = viewMode === 'recent' ? 'desc' : 'desc';
 
-    [enhancedStats, topPosts, profileLeaderboard, contentInsights] = await Promise.all([
+    [enhancedStats, topPosts] = await Promise.all([
       getEnhancedStats(null, workspace.id),
       getTopPostsEnhanced({
         limit: validLimit,
@@ -98,8 +85,6 @@ export default async function Home({ searchParams }: PageProps) {
         sortBy,
         order
       }),
-      getProfilePerformanceLeaderboard(workspace.id, 5),
-      getContentInsights(null, workspace.id),
     ]);
 
     stats = {
@@ -111,16 +96,11 @@ export default async function Home({ searchParams }: PageProps) {
       avg_comments: workspaceStats.avg_comments,
       avg_shares: workspaceStats.avg_shares,
     };
-
-    // Get engagement over time for workspace (get all posts and calculate)
-    const { posts: allWorkspacePosts } = await getWorkspacePosts(workspace.id, { limit: 999999 });
-    engagementData = calculateEngagementOverTime(allWorkspacePosts, 30);
   } else {
-    // Fetch data for selected profile (or all if null) with enhanced analytics
     const sortBy = viewMode === 'recent' ? 'published_at' : 'engagement_total';
     const order = viewMode === 'recent' ? 'desc' : 'desc';
 
-    [stats, enhancedStats, topPosts, engagementData, profileLeaderboard, contentInsights] = await Promise.all([
+    [stats, enhancedStats, topPosts] = await Promise.all([
       getStats(currentProfileId),
       getEnhancedStats(currentProfileId, null),
       getTopPostsEnhanced({
@@ -129,163 +109,168 @@ export default async function Home({ searchParams }: PageProps) {
         sortBy,
         order
       }),
-      getEngagementOverTime(30, currentProfileId),
-      getProfilePerformanceLeaderboard(null, 5),
-      getContentInsights(currentProfileId, null),
     ]);
   }
 
-  const currentProfile = currentProfileId
-    ? profiles.find(p => p.id === currentProfileId)
-    : null;
-
   return (
-    <Box sx={{ pb: 4 }}>
-      {/* Header with Profile Selector */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-        <Box>
-          <Typography variant="h4" fontWeight={700} gutterBottom>
-            Dashboard Overview
-          </Typography>
-          {workspace ? (
-            <Typography variant="body2" color="text.secondary">
-              Showing data for workspace: <Box component="span" fontWeight={600} color={workspace.color}>{workspace.name}</Box>
-            </Typography>
-          ) : currentProfile ? (
-            <Typography variant="body2" color="text.secondary">
-              Showing data for: <Box component="span" fontWeight={600}>{currentProfile.display_name}</Box>
-            </Typography>
-          ) : (
-            <Typography variant="body2" color="text.secondary">Showing data for all profiles</Typography>
-          )}
-        </Box>
-        <Box display="flex" alignItems="center" gap={2}>
-          <ProfileSelector profiles={profiles} currentProfileId={currentProfileId} />
-          <RefreshButton />
-        </Box>
-      </Box>
+    <>
+      <AppHeader />
+      <div className="flex h-screen overflow-hidden">
+        <AppSidebar />
+        <main className="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
+          <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
+            {/* Header */}
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-title-md2 font-semibold text-black dark:text-white">
+                {workspace ? `${workspace.name} Dashboard` : 'LinkedIn Analytics Dashboard'}
+              </h2>
+              {workspace && (
+                <span className="text-sm text-gray-500 dark:text-gray-400" style={{ color: workspace.color }}>
+                  Viewing workspace: {workspace.name}
+                </span>
+              )}
+            </div>
 
-      {/* NEW: AI Insights Banner */}
-      <Card
-        component={Link}
-        href="/insights"
-        sx={{
-          mb: 4,
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          cursor: 'pointer',
-          textDecoration: 'none',
-          transition: 'transform 0.2s',
-          '&:hover': {
-            transform: 'translateY(-2px)',
-          },
-        }}
-      >
-        <CardContent>
-          <Box display="flex" alignItems="center" justifyContent="space-between">
-            <Box display="flex" alignItems="center" gap={3}>
-              <Typography variant="h1" sx={{ fontSize: '3rem' }}>🤖</Typography>
-              <Box>
-                <Typography variant="h6" fontWeight={700} gutterBottom>
-                  Try the NEW AI LinkedIn Assistant!
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)' }}>
-                  Get instant AI-powered insights about your LinkedIn performance
-                </Typography>
-              </Box>
-            </Box>
-            <Button
-              variant="contained"
-              sx={{
-                bgcolor: 'rgba(255,255,255,0.2)',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
-                fontWeight: 600,
-              }}
-            >
-              Ask AI →
-            </Button>
-          </Box>
-        </CardContent>
-      </Card>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 xl:grid-cols-4 2xl:gap-7.5 mb-6">
+              {/* Total Posts */}
+              <div className="rounded-sm border border-stroke bg-white px-7.5 py-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+                <div className="flex h-11.5 w-11.5 items-center justify-center rounded-full bg-meta-2 dark:bg-meta-4">
+                  <svg className="fill-primary dark:fill-white" width="22" height="18" viewBox="0 0 22 18" fill="none">
+                    <path d="M7.18418 8.03751C9.31543 8.03751 11.0686 6.35313 11.0686 4.25626C11.0686 2.15938 9.31543 0.475006 7.18418 0.475006C5.05293 0.475006 3.2998 2.15938 3.2998 4.25626C3.2998 6.35313 5.05293 8.03751 7.18418 8.03751Z"/>
+                  </svg>
+                </div>
+                <div className="mt-4">
+                  <h4 className="text-title-md font-bold text-black dark:text-white">
+                    {stats.total_posts}
+                  </h4>
+                  <span className="text-sm font-medium">Total Posts</span>
+                </div>
+              </div>
 
-      {/* Enhanced Stats Grid */}
-      <Grid container spacing={3} sx={{ mb: 4 }}> {/* spacing={3} = 24px gaps */}
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <MuiStatsCard
-            title="Total Posts"
-            value={stats.total_posts}
-            icon={<Article sx={{ fontSize: 28 }} />}
-            color="primary"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <MuiStatsCard
-            title="Engagement Rate"
-            value={enhancedStats.engagement_rate.toFixed(1)}
-            subtitle="per post"
-            icon={<TrendingUp sx={{ fontSize: 28 }} />}
-            trend={enhancedStats.week_over_week_engagement_change}
-            color="info"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <MuiStatsCard
-            title="Viral Score"
-            value={enhancedStats.viral_score.toFixed(2)}
-            subtitle="shares per post"
-            icon={<Rocket sx={{ fontSize: 28 }} />}
-            trend={enhancedStats.week_over_week_posts_change}
-            trendLabel="posts vs LW"
-            color="secondary"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <MuiStatsCard
-            title="Conversation Rate"
-            value={`${enhancedStats.conversation_rate.toFixed(1)}%`}
-            subtitle="comments/likes ratio"
-            icon={<Comment sx={{ fontSize: 28 }} />}
-            color="success"
-          />
-        </Grid>
-      </Grid>
+              {/* Engagement Rate */}
+              <div className="rounded-sm border border-stroke bg-white px-7.5 py-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+                <div className="flex h-11.5 w-11.5 items-center justify-center rounded-full bg-meta-2 dark:bg-meta-4">
+                  <svg className="fill-primary dark:fill-white" width="20" height="22" viewBox="0 0 20 22" fill="none">
+                    <path d="M11.7531 16.4312C10.3781 16.4312 9.27808 17.5312 9.27808 18.9062C9.27808 20.2812 10.3781 21.3812 11.7531 21.3812C13.1281 21.3812 14.2281 20.2812 14.2281 18.9062C14.2281 17.5656 13.0937 16.4312 11.7531 16.4312Z"/>
+                  </svg>
+                </div>
+                <div className="mt-4">
+                  <h4 className="text-title-md font-bold text-black dark:text-white">
+                    {enhancedStats.engagement_rate.toFixed(1)}
+                  </h4>
+                  <span className="text-sm font-medium">Engagement Rate</span>
+                  {enhancedStats.week_over_week_engagement_change && (
+                    <span className={`text-xs ${enhancedStats.week_over_week_engagement_change > 0 ? 'text-meta-3' : 'text-meta-1'}`}>
+                      {enhancedStats.week_over_week_engagement_change > 0 ? '+' : ''}{enhancedStats.week_over_week_engagement_change.toFixed(1)}% vs last week
+                    </span>
+                  )}
+                </div>
+              </div>
 
-      {/* Engagement Chart */}
-      <Box mb={4}>
-        <MuiEngagementChart data={engagementData} />
-      </Box>
+              {/* Total Likes */}
+              <div className="rounded-sm border border-stroke bg-white px-7.5 py-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+                <div className="flex h-11.5 w-11.5 items-center justify-center rounded-full bg-meta-2 dark:bg-meta-4">
+                  <svg className="fill-primary dark:fill-white" width="22" height="18" viewBox="0 0 22 18" fill="none">
+                    <path d="M7.18418 8.03751C9.31543 8.03751 11.0686 6.35313 11.0686 4.25626C11.0686 2.15938 9.31543 0.475006 7.18418 0.475006C5.05293 0.475006 3.2998 2.15938 3.2998 4.25626C3.2998 6.35313 5.05293 8.03751 7.18418 8.03751Z"/>
+                  </svg>
+                </div>
+                <div className="mt-4">
+                  <h4 className="text-title-md font-bold text-black dark:text-white">
+                    {stats.total_likes}
+                  </h4>
+                  <span className="text-sm font-medium">Total Likes</span>
+                </div>
+              </div>
 
-      {/* Profile Performance Leaderboard - Only show if multiple profiles */}
-      {profileLeaderboard && profileLeaderboard.length > 1 && (
-        <Box mb={4}>
-          <ProfileLeaderboard
-            profiles={profileLeaderboard}
-            title={workspace ? "Top Performers in Workspace" : "Top Performing Profiles (Last 30 Days)"}
-          />
-        </Box>
-      )}
+              {/* Total Comments */}
+              <div className="rounded-sm border border-stroke bg-white px-7.5 py-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+                <div className="flex h-11.5 w-11.5 items-center justify-center rounded-full bg-meta-2 dark:bg-meta-4">
+                  <svg className="fill-primary dark:fill-white" width="22" height="22" viewBox="0 0 22 22" fill="none">
+                    <path d="M21.1063 18.0469L19.3875 3.23126C19.2157 1.71876 17.9438 0.584381 16.3969 0.584381H5.56878C4.05628 0.584381 2.78441 1.71876 2.57816 3.23126L0.859406 18.0469C0.756281 18.9063 1.03128 19.7313 1.61566 20.3844C2.20003 21.0375 3.02816 21.3813 3.89066 21.3813H18.1094C18.9719 21.3813 19.8 21.0031 20.3844 20.3844C20.9688 19.7656 21.2094 18.9063 21.1063 18.0469Z"/>
+                  </svg>
+                </div>
+                <div className="mt-4">
+                  <h4 className="text-title-md font-bold text-black dark:text-white">
+                    {stats.total_comments}
+                  </h4>
+                  <span className="text-sm font-medium">Total Comments</span>
+                </div>
+              </div>
+            </div>
 
-      {/* Content Insights */}
-      <Box mb={4}>
-        <ContentInsights insights={contentInsights} />
-      </Box>
+            {/* Top Posts Table */}
+            <div className="rounded-sm border border-stroke bg-white p-7.5 shadow-default dark:border-strokedark dark:bg-boxdark">
+              <div className="mb-5 flex items-center justify-between">
+                <h4 className="text-xl font-semibold text-black dark:text-white">
+                  {viewMode === 'recent' ? 'Recent' : 'Top'} {validLimit} Posts
+                </h4>
+                <div className="flex gap-2">
+                  <Link
+                    href={`/?view=top&limit=${validLimit}`}
+                    className={`rounded px-3 py-1.5 text-sm ${viewMode === 'top' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 dark:bg-meta-4 dark:text-white'}`}
+                  >
+                    Top Posts
+                  </Link>
+                  <Link
+                    href={`/?view=recent&limit=${validLimit}`}
+                    className={`rounded px-3 py-1.5 text-sm ${viewMode === 'recent' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 dark:bg-meta-4 dark:text-white'}`}
+                  >
+                    Recent Posts
+                  </Link>
+                </div>
+              </div>
 
-      {/* Posts Table with View Mode Toggle and Limit Selector */}
-      <Box>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Box display="flex" alignItems="center" gap={2}>
-            <Typography variant="h6" fontWeight={600}>
-              {viewMode === 'recent' ? 'Recent' : 'Top'} {validLimit} Posts
-            </Typography>
-            <ViewModeToggle currentMode={viewMode} />
-          </Box>
-          <LimitSelector currentLimit={validLimit} />
-        </Box>
-        <MuiPostsTable
-          posts={topPosts}
-          title={viewMode === 'recent' ? `Recent ${validLimit} Posts` : `Top ${validLimit} Posts`}
-        />
-      </Box>
-    </Box>
+              <div className="overflow-x-auto">
+                <table className="w-full table-auto">
+                  <thead>
+                    <tr className="bg-gray-2 text-left dark:bg-meta-4">
+                      <th className="px-4 py-4 font-medium text-black dark:text-white">Content</th>
+                      <th className="px-4 py-4 font-medium text-black dark:text-white">Author</th>
+                      <th className="px-4 py-4 font-medium text-black dark:text-white">Published</th>
+                      <th className="px-4 py-4 font-medium text-black dark:text-white">Likes</th>
+                      <th className="px-4 py-4 font-medium text-black dark:text-white">Comments</th>
+                      <th className="px-4 py-4 font-medium text-black dark:text-white">Shares</th>
+                      <th className="px-4 py-4 font-medium text-black dark:text-white">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {topPosts && topPosts.map((post) => (
+                      <tr key={post.id} className="border-b border-[#eee] dark:border-strokedark">
+                        <td className="px-4 py-5">
+                          <p className="text-sm text-black dark:text-white line-clamp-2">
+                            {post.content?.substring(0, 100)}...
+                          </p>
+                        </td>
+                        <td className="px-4 py-5">
+                          <p className="text-sm text-black dark:text-white">{post.author_name}</p>
+                        </td>
+                        <td className="px-4 py-5">
+                          <p className="text-sm text-black dark:text-white">
+                            {new Date(post.published_at).toLocaleDateString()}
+                          </p>
+                        </td>
+                        <td className="px-4 py-5">
+                          <p className="text-sm text-black dark:text-white">{post.likes}</p>
+                        </td>
+                        <td className="px-4 py-5">
+                          <p className="text-sm text-black dark:text-white">{post.comments}</p>
+                        </td>
+                        <td className="px-4 py-5">
+                          <p className="text-sm text-black dark:text-white">{post.shares}</p>
+                        </td>
+                        <td className="px-4 py-5">
+                          <p className="text-sm font-medium text-meta-3">{post.engagement_total}</p>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </>
   );
 }

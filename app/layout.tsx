@@ -1,15 +1,18 @@
-import type { Metadata } from "next";
-import { Suspense } from "react";
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
-import "./globals.css";
-import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
-import ThemeProvider from "@/components/ThemeProvider";
-import VerticalLayout from "@/components/layout/VerticalLayout";
+import { Outfit } from 'next/font/google';
+import './globals.css';
 
-export const metadata: Metadata = {
-  title: "LinkedIn Analytics Dashboard",
-  description: "Analytics dashboard for LinkedIn posts with Material-UI",
+import { SidebarProvider } from '@/context/SidebarContext';
+import { ThemeProvider as TailAdminThemeProvider } from '@/context/ThemeContext';
+import { WorkspaceProvider } from '@/contexts/WorkspaceContext';
+import { Suspense } from 'react';
+
+const outfit = Outfit({
+  subsets: ["latin"],
+});
+
+export const metadata = {
+  title: "LinkedIn Analytics Dashboard | TailAdmin",
+  description: "Analytics dashboard for LinkedIn posts with TailAdmin UI",
 };
 
 function LoadingFallback() {
@@ -29,17 +32,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
-      <body className="font-sans">
-        <ThemeProvider>
+    <html lang="en">
+      <body className={`${outfit.className} dark:bg-gray-900`}>
+        <TailAdminThemeProvider>
           <Suspense fallback={<LoadingFallback />}>
             <WorkspaceProvider>
-              <VerticalLayout>
+              <SidebarProvider>
                 {children}
-              </VerticalLayout>
+              </SidebarProvider>
             </WorkspaceProvider>
           </Suspense>
-        </ThemeProvider>
+        </TailAdminThemeProvider>
       </body>
     </html>
   );

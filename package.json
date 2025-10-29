@@ -23,6 +23,7 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@react-jvectormap/core": "^1.0.4",
     "@react-jvectormap/world": "^1.1.2",
+    "@svgr/webpack": "^8.1.0",
     "@types/pg": "^8.15.5",
     "apexcharts": "^5.3.5",
     "apify-client": "^2.18.0",

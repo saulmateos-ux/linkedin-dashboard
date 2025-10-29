@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "weaviate": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@weaviate/mcp-server"],
+      "env": {
+        "WEAVIATE_URL": "${WEAVIATE_URL}",
+        "WEAVIATE_API_KEY": "${WEAVIATE_API_KEY}"
+      }
+    }
+  }
+}

@@ -119,7 +119,7 @@ export default function ScrapeWorkspaceButton({ workspaceName, workspaceId, prof
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   {onlyNew ? (
-                    <>Only profiles that haven't been scraped yet (skips already-scraped profiles)</>
+                    <>Only profiles that haven&apos;t been scraped yet (skips already-scraped profiles)</>
                   ) : (
                     <>Apify will scrape {profileCount} profiles in parallel (up to 6 at a time)</>
                   )}

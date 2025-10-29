@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "./globals.css";
@@ -20,11 +21,13 @@ export default function RootLayout({
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body className="font-sans">
         <ThemeProvider>
-          <WorkspaceProvider>
-            <VerticalLayout>
-              {children}
-            </VerticalLayout>
-          </WorkspaceProvider>
+          <Suspense fallback={<div>Loading...</div>}>
+            <WorkspaceProvider>
+              <VerticalLayout>
+                {children}
+              </VerticalLayout>
+            </WorkspaceProvider>
+          </Suspense>
         </ThemeProvider>
       </body>
     </html>

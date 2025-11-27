@@ -4,6 +4,9 @@ import SearchBar from '@/components/SearchBar';
 import ExportButton from '@/components/ExportButton';
 import ProfileSelector from '@/components/ProfileSelector';
 import PostsFilterPanel from '@/components/PostsFilterPanel';
+import AppHeader from '@/layout/AppHeader';
+import AppSidebar from '@/layout/AppSidebar';
+import DynamicMain from '@/components/DynamicMain';
 
 export const revalidate = 3600; // Revalidate every hour
 
@@ -92,77 +95,87 @@ export default async function PostsPage({ searchParams }: PageProps) {
   const currentProfile = profileId ? profiles.find(p => p.id === profileId) : null;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">All Posts</h1>
-          <p className="text-gray-600 mt-1">
-            {total.toLocaleString()} total posts
-            {workspace ? (
-              <span> from workspace: <span className="font-medium" style={{ color: workspace.color }}>{workspace.name}</span></span>
-            ) : currentProfile ? (
-              ` from ${currentProfile.display_name}`
-            ) : null}
-          </p>
-        </div>
-        <div className="flex items-center space-x-4">
-          {!workspace && <ProfileSelector profiles={profiles} currentProfileId={profileId} />}
-          <ExportButton search={search} sortBy={sortBy} order={order} />
-        </div>
-      </div>
+    <>
+      <AppHeader />
+      <div className="flex h-screen overflow-hidden">
+        <AppSidebar />
+        <DynamicMain>
+          <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">All Posts</h1>
+                  <p className="text-gray-600 dark:text-gray-400 mt-1">
+                    {total.toLocaleString()} total posts
+                    {workspace ? (
+                      <span> from workspace: <span className="font-medium" style={{ color: workspace.color }}>{workspace.name}</span></span>
+                    ) : currentProfile ? (
+                      ` from ${currentProfile.display_name}`
+                    ) : null}
+                  </p>
+                </div>
+                <div className="flex items-center space-x-4">
+                  {!workspace && <ProfileSelector profiles={profiles} currentProfileId={profileId} />}
+                  <ExportButton search={search} sortBy={sortBy} order={order} />
+                </div>
+              </div>
 
-      {/* Search and Filters */}
-      <SearchBar currentSort={sortBy} currentOrder={order} currentSearch={search} />
+              {/* Search and Filters */}
+              <SearchBar currentSort={sortBy} currentOrder={order} currentSearch={search} />
 
-      {/* Advanced Filter Panel */}
-      <PostsFilterPanel />
+              {/* Advanced Filter Panel */}
+              <PostsFilterPanel />
 
-      {/* Posts Table */}
-      {posts.length > 0 ? (
-        <>
-          <SortablePostsTable posts={posts} showAll />
+              {/* Posts Table */}
+              {posts.length > 0 ? (
+                <>
+                  <SortablePostsTable posts={posts} showAll />
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center space-x-4">
-              <a
-                href={`/posts?search=${search}&sortBy=${sortBy}&order=${order}&page=${page - 1}${workspace ? `&workspace=${workspace.id}` : profileIdParam ? `&profile=${profileIdParam}` : ''}`}
-                className={`px-4 py-2 rounded-lg font-medium ${
-                  page <= 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-                }`}
-                aria-disabled={page <= 1}
-              >
-                ← Previous
-              </a>
-              <span className="text-gray-700">
-                Page {page} of {totalPages}
-              </span>
-              <a
-                href={`/posts?search=${search}&sortBy=${sortBy}&order=${order}&page=${page + 1}${workspace ? `&workspace=${workspace.id}` : profileIdParam ? `&profile=${profileIdParam}` : ''}`}
-                className={`px-4 py-2 rounded-lg font-medium ${
-                  page >= totalPages
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-                }`}
-                aria-disabled={page >= totalPages}
-              >
-                Next →
-              </a>
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-center space-x-4">
+                      <a
+                        href={`/posts?search=${search}&sortBy=${sortBy}&order=${order}&page=${page - 1}${workspace ? `&workspace=${workspace.id}` : profileIdParam ? `&profile=${profileIdParam}` : ''}`}
+                        className={`px-4 py-2 rounded-lg font-medium ${
+                          page <= 1
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                        }`}
+                        aria-disabled={page <= 1}
+                      >
+                        ← Previous
+                      </a>
+                      <span className="text-gray-700 dark:text-gray-300">
+                        Page {page} of {totalPages}
+                      </span>
+                      <a
+                        href={`/posts?search=${search}&sortBy=${sortBy}&order=${order}&page=${page + 1}${workspace ? `&workspace=${workspace.id}` : profileIdParam ? `&profile=${profileIdParam}` : ''}`}
+                        className={`px-4 py-2 rounded-lg font-medium ${
+                          page >= totalPages
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                        }`}
+                        aria-disabled={page >= totalPages}
+                      >
+                        Next →
+                      </a>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="bg-white rounded-lg shadow-sm p-12 text-center dark:bg-boxdark">
+                  <p className="text-gray-500 text-lg dark:text-gray-400">No posts found</p>
+                  {search && (
+                    <a href="/posts" className="text-blue-600 hover:text-blue-700 mt-2 inline-block dark:text-blue-400">
+                      Clear search
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
-          )}
-        </>
-      ) : (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-          <p className="text-gray-500 text-lg">No posts found</p>
-          {search && (
-            <a href="/posts" className="text-blue-600 hover:text-blue-700 mt-2 inline-block">
-              Clear search
-            </a>
-          )}
-        </div>
-      )}
-    </div>
+          </div>
+        </DynamicMain>
+      </div>
+    </>
   );
 }

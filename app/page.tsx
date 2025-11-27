@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import AppHeader from '@/layout/AppHeader';
 import AppSidebar from '@/layout/AppSidebar';
+import DynamicMain from '@/components/DynamicMain';
 import { getStats, getEngagementOverTime, getProfiles, getPrimaryProfile, getWorkspace, getWorkspaceStats, getWorkspacePosts, getWorkspaceProfiles, getEnhancedStats, getProfilePerformanceLeaderboard, getContentInsights, getTopPostsEnhanced } from '@/lib/db';
 import Link from 'next/link';
 
@@ -117,7 +118,7 @@ export default async function Home({ searchParams }: PageProps) {
       <AppHeader />
       <div className="flex h-screen overflow-hidden">
         <AppSidebar />
-        <main className="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden lg:ml-[90px]">
+        <DynamicMain>
           <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
             {/* Header */}
             <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -269,7 +270,7 @@ export default async function Home({ searchParams }: PageProps) {
               </div>
             </div>
           </div>
-        </main>
+        </DynamicMain>
       </div>
     </>
   );

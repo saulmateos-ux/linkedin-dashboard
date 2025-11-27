@@ -1,6 +1,9 @@
 import AIChat from '@/components/AIChat';
 import Link from 'next/link';
 import { getWorkspace, getWorkspaceProfiles } from '@/lib/db';
+import AppHeader from '@/layout/AppHeader';
+import AppSidebar from '@/layout/AppSidebar';
+import DynamicMain from '@/components/DynamicMain';
 
 export const metadata = {
   title: 'AI Insights | LinkedIn Dashboard',
@@ -31,8 +34,13 @@ export default async function InsightsPage({ searchParams }: InsightsPageProps) 
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
-      <div className="max-w-6xl mx-auto">
+    <>
+      <AppHeader />
+      <div className="flex h-screen overflow-hidden">
+        <AppSidebar />
+        <DynamicMain>
+          <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-8">
+            <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <Link
@@ -142,7 +150,10 @@ export default async function InsightsPage({ searchParams }: InsightsPageProps) 
             <span className="font-semibold">6 intelligence views</span>
           </p>
         </div>
+            </div>
+          </div>
+        </DynamicMain>
       </div>
-    </div>
+    </>
   );
 }

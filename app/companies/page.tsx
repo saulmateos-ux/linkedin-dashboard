@@ -2,6 +2,9 @@ import Link from 'next/link';
 import { getCompaniesWithStats } from '@/lib/db';
 import SyncCompaniesButton from '@/components/SyncCompaniesButton';
 import ScrapeCompaniesButton from '@/components/ScrapeCompaniesButton';
+import AppHeader from '@/layout/AppHeader';
+import AppSidebar from '@/layout/AppSidebar';
+import DynamicMain from '@/components/DynamicMain';
 
 export const revalidate = 3600; // Revalidate every hour
 
@@ -9,14 +12,20 @@ export default async function CompaniesPage() {
   const companies = await getCompaniesWithStats();
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Companies</h1>
-          <p className="text-gray-600 mt-1">
-            {companies.length} companies tracked
-          </p>
-        </div>
+    <>
+      <AppHeader />
+      <div className="flex h-screen overflow-hidden">
+        <AppSidebar />
+        <DynamicMain>
+          <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Companies</h1>
+                  <p className="text-gray-600 dark:text-gray-400 mt-1">
+                    {companies.length} companies tracked
+                  </p>
+                </div>
         <div className="flex items-center space-x-3">
           <SyncCompaniesButton />
           <ScrapeCompaniesButton
@@ -84,13 +93,17 @@ export default async function CompaniesPage() {
       </div>
 
       {companies.length === 0 && (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-          <p className="text-gray-500 text-lg">No companies found</p>
-          <p className="text-gray-400 mt-2">
+        <div className="bg-white dark:bg-boxdark rounded-lg shadow-sm p-12 text-center">
+          <p className="text-gray-500 dark:text-gray-400 text-lg">No companies found</p>
+          <p className="text-gray-400 dark:text-gray-500 mt-2">
             Add company profiles to start tracking them
           </p>
         </div>
       )}
-    </div>
+            </div>
+          </div>
+        </DynamicMain>
+      </div>
+    </>
   );
 }

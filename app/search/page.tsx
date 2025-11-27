@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import AppHeader from '@/layout/AppHeader';
+import AppSidebar from '@/layout/AppSidebar';
+import DynamicMain from '@/components/DynamicMain';
 
 interface SearchResult {
   postId: string;
@@ -67,28 +70,33 @@ export default function SemanticSearchPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-6xl mx-auto px-8 py-6">
-          <Link
-            href="/"
-            className="text-sm text-gray-600 hover:text-gray-900 mb-4 inline-block"
-          >
-            ← Back to Dashboard
-          </Link>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                🧠 Semantic Search
-              </h1>
-              <p className="text-gray-600 mt-2">
-                Search by meaning, not just keywords - powered by Weaviate + OpenAI
-              </p>
+    <>
+      <AppHeader />
+      <div className="flex h-screen overflow-hidden">
+        <AppSidebar />
+        <DynamicMain>
+          <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:to-gray-800">
+            {/* Header */}
+            <div className="bg-white dark:bg-boxdark border-b border-gray-200 dark:border-gray-700 shadow-sm">
+              <div className="max-w-6xl mx-auto px-8 py-6">
+                <Link
+                  href="/"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 mb-4 inline-block"
+                >
+                  ← Back to Dashboard
+                </Link>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                      🧠 Semantic Search
+                    </h1>
+                    <p className="text-gray-600 dark:text-gray-400 mt-2">
+                      Search by meaning, not just keywords - powered by Weaviate + OpenAI
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </div>
 
       <div className="max-w-6xl mx-auto px-8 py-8">
         {/* Search Box */}
@@ -260,6 +268,9 @@ export default function SemanticSearchPage() {
           </div>
         )}
       </div>
-    </div>
+          </div>
+        </DynamicMain>
+      </div>
+    </>
   );
 }

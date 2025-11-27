@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import Link from 'next/link';
+import AppHeader from '@/layout/AppHeader';
+import AppSidebar from '@/layout/AppSidebar';
+import DynamicMain from '@/components/DynamicMain';
 
 interface Workspace {
   id: number;
@@ -275,22 +278,28 @@ export default function WorkspacesPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Workspaces</h1>
-          <p className="text-gray-600 mt-1">
-            Organize your profiles into workspaces for better tracking
-          </p>
-        </div>
-        <button
-          onClick={() => setIsCreating(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-        >
-          + Create Workspace
-        </button>
-      </div>
+    <>
+      <AppHeader />
+      <div className="flex h-screen overflow-hidden">
+        <AppSidebar />
+        <DynamicMain>
+          <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
+            <div className="space-y-6">
+              {/* Header */}
+              <div className="flex justify-between items-center">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Workspaces</h1>
+                  <p className="text-gray-600 dark:text-gray-400 mt-1">
+                    Organize your profiles into workspaces for better tracking
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsCreating(true)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  + Create Workspace
+                </button>
+              </div>
 
       {/* Workspaces Grid */}
       {workspaces.length > 0 ? (
@@ -637,6 +646,10 @@ export default function WorkspacesPage() {
           </div>
         </div>
       )}
-    </div>
+            </div>
+          </div>
+        </DynamicMain>
+      </div>
+    </>
   );
 }

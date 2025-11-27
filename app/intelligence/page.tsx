@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
+import AppHeader from '@/layout/AppHeader';
+import AppSidebar from '@/layout/AppSidebar';
+import DynamicMain from '@/components/DynamicMain';
 
 interface SearchPost {
   authorName: string;
@@ -116,26 +119,31 @@ export default function IntelligencePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-8 py-4">
-          <Link
-            href="/"
-            className="text-sm text-gray-600 hover:text-gray-900 mb-2 inline-block"
-          >
-            ← Back to Dashboard
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              🤖 AI Intelligence Assistant
-            </h1>
-            <p className="text-gray-600 text-sm mt-1">
-              Ask questions, get insights - powered by Weaviate + GPT-4
-            </p>
-          </div>
-        </div>
-      </div>
+    <>
+      <AppHeader />
+      <div className="flex h-screen overflow-hidden">
+        <AppSidebar />
+        <DynamicMain>
+          <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:to-gray-800">
+            {/* Header */}
+            <div className="bg-white dark:bg-boxdark border-b border-gray-200 dark:border-gray-700 shadow-sm sticky top-0 z-10">
+              <div className="max-w-5xl mx-auto px-8 py-4">
+                <Link
+                  href="/"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 mb-2 inline-block"
+                >
+                  ← Back to Dashboard
+                </Link>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    🤖 AI Intelligence Assistant
+                  </h1>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
+                    Ask questions, get insights - powered by Weaviate + GPT-4
+                  </p>
+                </div>
+              </div>
+            </div>
 
       <div className="max-w-5xl mx-auto px-8 py-6">
         {/* Messages */}
@@ -342,6 +350,9 @@ export default function IntelligencePage() {
           </form>
         </div>
       </div>
-    </div>
+          </div>
+        </DynamicMain>
+      </div>
+    </>
   );
 }

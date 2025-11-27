@@ -3,6 +3,9 @@ import ProfileCard from '@/components/ProfileCard';
 import ProfilesHeader from '@/components/ProfilesHeader';
 import ScrapeWorkspaceButton from '@/components/ScrapeWorkspaceButton';
 import Link from 'next/link';
+import AppHeader from '@/layout/AppHeader';
+import AppSidebar from '@/layout/AppSidebar';
+import DynamicMain from '@/components/DynamicMain';
 
 export const revalidate = 0; // Disable cache so new profiles show immediately
 
@@ -60,73 +63,83 @@ export default async function ProfilesPage({ searchParams }: PageProps) {
   ];
 
   return (
-    <div className="space-y-6">
-      <ProfilesHeader
-        workspaceId={workspace?.id}
-        profiles={profiles}
-        filterType={typeFilter}
-      />
+    <>
+      <AppHeader />
+      <div className="flex h-screen overflow-hidden">
+        <AppSidebar />
+        <DynamicMain>
+          <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
+            <div className="space-y-6">
+              <ProfilesHeader
+                workspaceId={workspace?.id}
+                profiles={profiles}
+                filterType={typeFilter}
+              />
 
-      {/* Workspace Context Banner */}
-      {workspace && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
-          <p className="text-sm text-gray-700">
-            Showing profiles from workspace: <span className="font-medium" style={{ color: workspace.color }}>{workspace.name}</span>
-            {workspace.description && <span className="text-gray-600"> - {workspace.description}</span>}
-          </p>
-          <ScrapeWorkspaceButton
-            workspaceName={workspace.name}
-            workspaceId={workspace.id}
-            profileCount={allProfiles.length}
-          />
-        </div>
-      )}
+              {/* Workspace Context Banner */}
+              {workspace && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between dark:bg-blue-900/20 dark:border-blue-800">
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    Showing profiles from workspace: <span className="font-medium" style={{ color: workspace.color }}>{workspace.name}</span>
+                    {workspace.description && <span className="text-gray-600 dark:text-gray-400"> - {workspace.description}</span>}
+                  </p>
+                  <ScrapeWorkspaceButton
+                    workspaceName={workspace.name}
+                    workspaceId={workspace.id}
+                    profileCount={allProfiles.length}
+                  />
+                </div>
+              )}
 
-      {/* Type Filter Tabs */}
-      <div className="flex space-x-2 border-b border-gray-200">
-        {types.map((type) => {
-          const isActive = typeFilter === type.value || (!typeFilter && type.value === '');
-          // Build URL preserving workspace parameter
-          const params = new URLSearchParams();
-          if (type.value) params.set('type', type.value);
-          if (workspaceIdParam) params.set('workspace', workspaceIdParam);
-          const href = params.toString() ? `/profiles?${params.toString()}` : '/profiles';
+              {/* Type Filter Tabs */}
+              <div className="flex space-x-2 border-b border-gray-200 dark:border-gray-700">
+                {types.map((type) => {
+                  const isActive = typeFilter === type.value || (!typeFilter && type.value === '');
+                  // Build URL preserving workspace parameter
+                  const params = new URLSearchParams();
+                  if (type.value) params.set('type', type.value);
+                  if (workspaceIdParam) params.set('workspace', workspaceIdParam);
+                  const href = params.toString() ? `/profiles?${params.toString()}` : '/profiles';
 
-          return (
-            <Link
-              key={type.value}
-              href={href}
-              className={`px-4 py-3 font-medium transition-colors ${
-                isActive
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              {type.label}
-              <span className="ml-2 text-sm text-gray-500">({type.count})</span>
-            </Link>
-          );
-        })}
+                  return (
+                    <Link
+                      key={type.value}
+                      href={href}
+                      className={`px-4 py-3 font-medium transition-colors ${
+                        isActive
+                          ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
+                          : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
+                      }`}
+                    >
+                      {type.label}
+                      <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">({type.count})</span>
+                    </Link>
+                  );
+                })}
+              </div>
+
+              {/* Profiles Grid */}
+              {profilesWithStats.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {profilesWithStats.map((profile) => (
+                    <ProfileCard key={profile.id} profile={profile} postCount={profile.postCount} />
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white rounded-lg shadow-sm p-12 text-center dark:bg-boxdark">
+                  <p className="text-gray-500 text-lg mb-4 dark:text-gray-400">
+                    No profiles found
+                    {typeFilter && ` of type "${typeFilter}"`}
+                  </p>
+                  <p className="text-gray-400 text-sm dark:text-gray-500">
+                    Click the &quot;Add Profile&quot; button above to add your first profile
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </DynamicMain>
       </div>
-
-      {/* Profiles Grid */}
-      {profilesWithStats.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {profilesWithStats.map((profile) => (
-            <ProfileCard key={profile.id} profile={profile} postCount={profile.postCount} />
-          ))}
-        </div>
-      ) : (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-          <p className="text-gray-500 text-lg mb-4">
-            No profiles found
-            {typeFilter && ` of type "${typeFilter}"`}
-          </p>
-          <p className="text-gray-400 text-sm">
-            Click the &quot;Add Profile&quot; button above to add your first profile
-          </p>
-        </div>
-      )}
-    </div>
+    </>
   );
 }

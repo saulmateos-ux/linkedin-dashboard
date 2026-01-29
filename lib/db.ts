@@ -121,12 +121,12 @@ export async function getStats(profileId?: number | null, workspaceId?: number |
   let params: (number)[] = [];
 
   if (profileId) {
-    whereClause = 'WHERE profile_id = $1';
+    whereClause = 'WHERE profile_id = $1 AND (is_repost = false OR is_repost IS NULL)';
     params = [profileId];
   } else if (workspaceId) {
     whereClause = `WHERE profile_id IN (
       SELECT profile_id FROM workspace_profiles WHERE workspace_id = $1
-    )`;
+    ) AND (is_repost = false OR is_repost IS NULL)`;
     params = [workspaceId];
   }
 
@@ -169,12 +169,12 @@ export async function getTopPosts(limit: number = 10, profileId?: number | null,
   let params: (number)[];
 
   if (profileId) {
-    whereClause = 'WHERE profile_id = $2';
+    whereClause = 'WHERE profile_id = $2 AND (is_repost = false OR is_repost IS NULL)';
     params = [limit, profileId];
   } else if (workspaceId) {
     whereClause = `WHERE profile_id IN (
       SELECT profile_id FROM workspace_profiles WHERE workspace_id = $2
-    )`;
+    ) AND (is_repost = false OR is_repost IS NULL)`;
     params = [limit, workspaceId];
   } else {
     params = [limit];
@@ -231,7 +231,7 @@ export async function getPosts(options: {
     hashtag,
   } = options;
 
-  let whereClause = '1=1';
+  let whereClause = '1=1 AND (p.is_repost = false OR p.is_repost IS NULL)';
   const params: (string | number)[] = [];
 
   if (profileId) {
@@ -1705,13 +1705,13 @@ export async function getEnhancedStats(
   let params: number[] = [];
 
   if (profileId) {
-    whereClause = 'WHERE profile_id = $1';
+    whereClause = 'WHERE profile_id = $1 AND (is_repost = false OR is_repost IS NULL)';
     params = [profileId];
   } else if (workspaceId) {
     whereClause = `
       WHERE profile_id IN (
         SELECT profile_id FROM workspace_profiles WHERE workspace_id = $1
-      )
+      ) AND (is_repost = false OR is_repost IS NULL)
     `;
     params = [workspaceId];
   }
@@ -1935,13 +1935,13 @@ export async function getTopPostsEnhanced(options: {
   let params: number[];
 
   if (profileId) {
-    whereClause = 'WHERE profile_id = $2';
+    whereClause = 'WHERE profile_id = $2 AND (is_repost = false OR is_repost IS NULL)';
     params = [limit, profileId];
   } else if (workspaceId) {
     whereClause = `
       WHERE profile_id IN (
         SELECT profile_id FROM workspace_profiles WHERE workspace_id = $2
-      )
+      ) AND (is_repost = false OR is_repost IS NULL)
     `;
     params = [limit, workspaceId];
   } else {

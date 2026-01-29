@@ -51,7 +51,7 @@ export interface Profile {
   languages: Array<{ name: string; proficiency?: string }> | null;
   certifications: Array<{ name: string; issuer?: string; issued_date?: string }> | null;
   honors_awards: Array<{ title: string; issuer?: string; date?: string }> | null;
-  profile_scraped_at: Date | null;
+  profile_scraped_at: Date | null; // Timestamp when background was last scraped
   profile_data_version: number;
 
   created_at: Date;
@@ -2248,6 +2248,159 @@ export async function bulkImportProfileBackgrounds(
   }
 
   return { updated, experiences_added, education_added };
+}
+
+// ============================================================================
+// YOUTUBE FUNCTIONS
+// ============================================================================
+
+export interface YouTubeVideo {
+  id: string;
+  post_url: string;
+  title: string;
+  content: string;
+  author_name: string;
+  author_username: string;
+  published_at: Date;
+  likes: number;
+  comments: number;
+  shares: number;
+  views: number;
+  engagement_total: number;
+  video_duration: number | null;
+  transcript_language: string | null;
+  profile_id: number;
+}
+
+export interface YouTubeChannel {
+  id: number;
+  username: string;
+  display_name: string;
+  profile_type: string;
+  follower_count: number | null;
+  video_count: number;
+}
+
+export interface YouTubeStats {
+  total_videos: number;
+  total_channels: number;
+  with_transcripts: number;
+  total_views: number;
+  total_likes: number;
+}
+
+/**
+ * Get YouTube videos with search/sort/pagination
+ */
+export async function getYouTubeVideos(options: {
+  search?: string;
+  sortBy?: 'published_at' | 'views' | 'likes' | 'engagement_total';
+  order?: 'asc' | 'desc';
+  limit?: number;
+  offset?: number;
+  channelId?: number | null;
+  workspaceId?: number | null;
+}): Promise<{ videos: YouTubeVideo[]; total: number }> {
+  const {
+    search = '',
+    sortBy = 'published_at',
+    order = 'desc',
+    limit = 50,
+    offset = 0,
+    channelId,
+    workspaceId,
+  } = options;
+
+  let whereClause = "p.platform = 'youtube'";
+  const params: (string | number)[] = [];
+
+  if (channelId) {
+    whereClause += ` AND p.profile_id = $${params.length + 1}`;
+    params.push(channelId);
+  }
+
+  if (workspaceId) {
+    whereClause += ` AND p.profile_id IN (SELECT profile_id FROM workspace_profiles WHERE workspace_id = $${params.length + 1})`;
+    params.push(workspaceId);
+  }
+
+  if (search) {
+    whereClause += ` AND (p.title ILIKE $${params.length + 1} OR p.content ILIKE $${params.length + 1})`;
+    params.push(`%${search}%`);
+  }
+
+  const countResult = await pool.query(
+    `SELECT COUNT(*) FROM posts p WHERE ${whereClause}`,
+    params
+  );
+  const total = parseInt(countResult.rows[0].count);
+
+  params.push(limit, offset);
+  const query = `
+    SELECT
+      p.id, p.post_url, p.title, p.content, p.author_name, p.author_username,
+      p.published_at, p.likes, p.comments, p.shares, p.views,
+      p.engagement_total, p.video_duration, p.transcript_language, p.profile_id
+    FROM posts p
+    WHERE ${whereClause}
+    ORDER BY p.${sortBy} ${order.toUpperCase()}
+    LIMIT $${params.length - 1} OFFSET $${params.length}
+  `;
+
+  const result = await pool.query(query, params);
+  return { videos: result.rows, total };
+}
+
+/**
+ * Get YouTube channels (profiles with username starting with @)
+ */
+export async function getYouTubeChannels(): Promise<YouTubeChannel[]> {
+  const query = `
+    SELECT
+      pr.id, pr.username, pr.display_name, pr.profile_type, pr.follower_count,
+      COUNT(p.id) as video_count
+    FROM profiles pr
+    LEFT JOIN posts p ON pr.id = p.profile_id AND p.platform = 'youtube'
+    WHERE pr.username LIKE '@%'
+    GROUP BY pr.id
+    ORDER BY video_count DESC, pr.display_name
+  `;
+  const result = await pool.query(query);
+  return result.rows.map(r => ({ ...r, video_count: parseInt(r.video_count) }));
+}
+
+/**
+ * Get aggregate YouTube stats
+ */
+export async function getYouTubeStats(workspaceId?: number | null): Promise<YouTubeStats> {
+  let whereClause = "p.platform = 'youtube'";
+  const params: number[] = [];
+
+  if (workspaceId) {
+    whereClause += ` AND p.profile_id IN (SELECT profile_id FROM workspace_profiles WHERE workspace_id = $1)`;
+    params.push(workspaceId);
+  }
+
+  const query = `
+    SELECT
+      COUNT(*) as total_videos,
+      COUNT(DISTINCT p.profile_id) as total_channels,
+      COUNT(*) FILTER (WHERE p.transcript_language IS NOT NULL) as with_transcripts,
+      COALESCE(SUM(p.views), 0) as total_views,
+      COALESCE(SUM(p.likes), 0) as total_likes
+    FROM posts p
+    WHERE ${whereClause}
+  `;
+
+  const result = await pool.query(query, params);
+  const row = result.rows[0];
+  return {
+    total_videos: parseInt(row.total_videos),
+    total_channels: parseInt(row.total_channels),
+    with_transcripts: parseInt(row.with_transcripts),
+    total_views: parseInt(row.total_views),
+    total_likes: parseInt(row.total_likes),
+  };
 }
 
 // Export pool for direct access in API routes if needed

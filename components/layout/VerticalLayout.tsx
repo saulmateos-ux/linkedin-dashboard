@@ -32,6 +32,7 @@ import {
   TrendingUp as TrendingUpIcon,
   Feed as FeedIcon,
   Topic as TopicIcon,
+  OndemandVideo as YouTubeIcon,
 } from '@mui/icons-material';
 import WorkspaceSwitcher from '@/components/WorkspaceSwitcher';
 
@@ -48,6 +49,7 @@ const navigationItems: NavItem[] = [
   { title: 'All Posts', icon: <ArticleIcon />, path: '/posts' },
   { title: 'Profiles', icon: <PeopleIcon />, path: '/profiles' },
   { title: 'Companies', icon: <BusinessIcon />, path: '/companies' },
+  { title: 'YouTube', icon: <YouTubeIcon />, path: '/youtube' },
   { title: 'Workspaces', icon: <FolderIcon />, path: '/workspaces' },
   { title: 'AI Insights', icon: <LightbulbIcon />, path: '/insights' },
   { title: 'Intelligence', icon: <TrendingUpIcon />, path: '/intelligence' },
@@ -72,7 +74,7 @@ export default function VerticalLayout({ children }: { children: React.ReactNode
     if (!currentWorkspace) return path;
 
     // Pages that support workspace filtering
-    const supportsWorkspace = ['/', '/posts', '/profiles', '/companies', '/news', '/topics'].includes(path);
+    const supportsWorkspace = ['/', '/posts', '/profiles', '/companies', '/youtube', '/news', '/topics'].includes(path);
 
     if (supportsWorkspace) {
       return `${path}?workspace=${currentWorkspace.id}`;

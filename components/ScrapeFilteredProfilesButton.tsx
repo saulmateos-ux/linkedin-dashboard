@@ -27,34 +27,54 @@ export default function ScrapeFilteredProfilesButton({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [scrapeMode, setScrapeMode] = useState<'new-only' | 'smart' | 'all'>('smart'); // Default to smart
 
   if (profiles.length === 0) {
     return null; // Don't show button if no profiles
   }
 
-  // Calculate preview stats
-  const initialProfiles = profiles.filter(p => !p.last_scraped_at);
-  const weeklyProfiles = profiles.filter(p => {
+  // Filter profiles based on scrape mode
+  const profilesToScrape = scrapeMode === 'new-only'
+    ? profiles.filter(p => !p.last_scraped_at)
+    : profiles; // 'smart' and 'all' include all profiles
+
+  // Calculate preview stats based on filtered profiles
+  const initialProfiles = profilesToScrape.filter(p => !p.last_scraped_at);
+  const weeklyProfiles = profilesToScrape.filter(p => {
     if (!p.last_scraped_at) return false;
     const days = getDaysSince(p.last_scraped_at);
     return days !== null && days <= 7;
   });
-  const catchupProfiles = profiles.filter(p => {
+  const catchupProfiles = profilesToScrape.filter(p => {
     if (!p.last_scraped_at) return false;
     const days = getDaysSince(p.last_scraped_at);
     return days !== null && days > 7 && days <= 30;
   });
-  const refreshProfiles = profiles.filter(p => {
+  const refreshProfiles = profilesToScrape.filter(p => {
     if (!p.last_scraped_at) return false;
     const days = getDaysSince(p.last_scraped_at);
     return days !== null && days > 30;
   });
 
-  const initialPosts = initialProfiles.length * 100;
-  const weeklyPosts = weeklyProfiles.length * 7;
-  const catchupPosts = catchupProfiles.length * 30;
-  const refreshPosts = refreshProfiles.length * 100;
-  const totalPosts = initialPosts + weeklyPosts + catchupPosts + refreshPosts;
+  // Calculate posts based on scrape mode
+  let initialPosts, weeklyPosts, catchupPosts, refreshPosts, totalPosts;
+
+  if (scrapeMode === 'all') {
+    // All mode: scrape 100 posts from ALL profiles
+    totalPosts = profilesToScrape.length * 100;
+    initialPosts = totalPosts;
+    weeklyPosts = 0;
+    catchupPosts = 0;
+    refreshPosts = 0;
+  } else {
+    // Smart mode or new-only: use smart batching
+    initialPosts = initialProfiles.length * 100;
+    weeklyPosts = weeklyProfiles.length * 7;
+    catchupPosts = catchupProfiles.length * 30;
+    refreshPosts = refreshProfiles.length * 100;
+    totalPosts = initialPosts + weeklyPosts + catchupPosts + refreshPosts;
+  }
+
   const estimatedCost = totalPosts * 0.002;
 
   // Button label based on filter
@@ -77,7 +97,7 @@ export default function ScrapeFilteredProfilesButton({
     setSuccess('');
 
     try {
-      const profileIds = profiles.map(p => p.id);
+      const profileIds = profilesToScrape.map(p => p.id);
 
       const res = await fetch('/api/scrape', {
         method: 'POST',
@@ -117,7 +137,7 @@ export default function ScrapeFilteredProfilesButton({
         className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition-colors flex items-center gap-2"
       >
         <span className="text-lg">🔄</span>
-        {buttonLabel} ({profiles.length})
+        {buttonLabel} ({profilesToScrape.length})
       </button>
 
       {/* Modal */}
@@ -141,7 +161,19 @@ export default function ScrapeFilteredProfilesButton({
             {/* Content */}
             <div className="p-6 space-y-4">
               <p className="text-gray-700">
-                You&apos;re about to scrape <span className="font-semibold">{profiles.length} profile{profiles.length !== 1 ? 's' : ''}</span> with smart batching:
+                {scrapeMode === 'new-only' ? (
+                  <>
+                    You&apos;re about to scrape <span className="font-semibold text-blue-600">{profilesToScrape.length} new profile{profilesToScrape.length !== 1 ? 's' : ''}</span> (never scraped before):
+                  </>
+                ) : scrapeMode === 'smart' ? (
+                  <>
+                    You&apos;re about to scrape <span className="font-semibold text-purple-600">{profilesToScrape.length} profile{profilesToScrape.length !== 1 ? 's' : ''}</span> with <strong>smart batching</strong>:
+                  </>
+                ) : (
+                  <>
+                    You&apos;re about to scrape <span className="font-semibold">{profilesToScrape.length} profile{profilesToScrape.length !== 1 ? 's' : ''}</span> (100 posts each):
+                  </>
+                )}
               </p>
 
               {/* Breakdown */}
@@ -192,6 +224,78 @@ export default function ScrapeFilteredProfilesButton({
                 </div>
               </div>
 
+              {/* Scrape Mode Selector */}
+              {!loading && !success && (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-900">
+                    Scrape Strategy:
+                  </label>
+
+                  {/* Smart Mode (Default) */}
+                  <div className="flex items-start gap-3 p-3 bg-purple-50 border border-purple-200 rounded-lg cursor-pointer hover:bg-purple-100 transition-colors"
+                       onClick={() => setScrapeMode('smart')}>
+                    <input
+                      type="radio"
+                      id="smart"
+                      name="scrapeMode"
+                      checked={scrapeMode === 'smart'}
+                      onChange={() => setScrapeMode('smart')}
+                      className="mt-0.5 h-4 w-4 text-purple-600 border-gray-300"
+                    />
+                    <label htmlFor="smart" className="flex-1 cursor-pointer">
+                      <span className="block text-sm font-medium text-gray-900">
+                        🧠 Smart Scraping (Recommended)
+                      </span>
+                      <span className="block text-xs text-gray-600 mt-0.5">
+                        New profiles: 100 posts • Recent (≤7 days): 7 posts • Catch-up (8-30 days): 30 posts • Old (&gt;30 days): 100 posts
+                      </span>
+                    </label>
+                  </div>
+
+                  {/* New Only Mode */}
+                  <div className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
+                       onClick={() => setScrapeMode('new-only')}>
+                    <input
+                      type="radio"
+                      id="new-only"
+                      name="scrapeMode"
+                      checked={scrapeMode === 'new-only'}
+                      onChange={() => setScrapeMode('new-only')}
+                      className="mt-0.5 h-4 w-4 text-blue-600 border-gray-300"
+                    />
+                    <label htmlFor="new-only" className="flex-1 cursor-pointer">
+                      <span className="block text-sm font-medium text-gray-900">
+                        ⚡ New Profiles Only
+                      </span>
+                      <span className="block text-xs text-gray-600 mt-0.5">
+                        Only scrape profiles never scraped before (100 posts each)
+                      </span>
+                    </label>
+                  </div>
+
+                  {/* All Mode */}
+                  <div className="flex items-start gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                       onClick={() => setScrapeMode('all')}>
+                    <input
+                      type="radio"
+                      id="all"
+                      name="scrapeMode"
+                      checked={scrapeMode === 'all'}
+                      onChange={() => setScrapeMode('all')}
+                      className="mt-0.5 h-4 w-4 text-gray-600 border-gray-300"
+                    />
+                    <label htmlFor="all" className="flex-1 cursor-pointer">
+                      <span className="block text-sm font-medium text-gray-900">
+                        🔄 Full Refresh
+                      </span>
+                      <span className="block text-xs text-gray-600 mt-0.5">
+                        Scrape ALL profiles with 100 posts each (most expensive)
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              )}
+
               {/* Success Message */}
               {success && (
                 <div className="bg-green-50 text-green-700 px-4 py-3 rounded-lg text-sm font-medium">
@@ -203,6 +307,14 @@ export default function ScrapeFilteredProfilesButton({
               {error && (
                 <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm">
                   {error}
+                </div>
+              )}
+
+              {/* No New Profiles Warning */}
+              {!loading && !success && scrapeMode === 'new-only' && profilesToScrape.length === 0 && (
+                <div className="bg-orange-50 border border-orange-200 text-orange-800 px-4 py-3 rounded-lg text-sm">
+                  <p className="font-medium mb-1">ℹ️ No new profiles to scrape</p>
+                  <p>All profiles have been scraped before. Switch to &quot;Smart Scraping&quot; or &quot;Full Refresh&quot; to re-scrape them.</p>
                 </div>
               )}
 
@@ -229,7 +341,7 @@ export default function ScrapeFilteredProfilesButton({
               <button
                 type="button"
                 onClick={handleScrape}
-                disabled={loading || success !== ''}
+                disabled={loading || success !== '' || (scrapeMode === 'new-only' && profilesToScrape.length === 0)}
                 className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
@@ -258,8 +370,14 @@ export default function ScrapeFilteredProfilesButton({
                   </span>
                 ) : success ? (
                   '✅ Done'
+                ) : scrapeMode === 'new-only' && profilesToScrape.length === 0 ? (
+                  'No New Profiles'
+                ) : scrapeMode === 'smart' ? (
+                  `🧠 Smart Scrape ${profilesToScrape.length}`
+                ) : scrapeMode === 'new-only' ? (
+                  `⚡ Scrape ${profilesToScrape.length} New`
                 ) : (
-                  `Scrape ${profiles.length}`
+                  `🔄 Full Refresh ${profilesToScrape.length}`
                 )}
               </button>
             </div>

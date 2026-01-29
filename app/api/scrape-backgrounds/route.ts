@@ -81,7 +81,7 @@ interface ApifyProfileResult {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { profileIds, workspaceId } = body;
+    const { profileIds, workspaceId, onlyNew = false } = body;
 
     if (!profileIds && !workspaceId) {
       return NextResponse.json(
@@ -99,9 +99,17 @@ export async function POST(request: Request) {
       profilesToScrape = allProfiles.filter(p => profileIds.includes(p.id));
     }
 
+    // Filter for only new profiles if requested (profiles without background data)
+    if (onlyNew) {
+      profilesToScrape = profilesToScrape.filter(p => !p.profile_scraped_at);
+    }
+
     if (profilesToScrape.length === 0) {
+      const errorMessage = onlyNew
+        ? 'No new profiles to scrape. All profiles already have background data! Uncheck "Only scrape new profiles" to re-scrape them.'
+        : 'No profiles found to scrape';
       return NextResponse.json(
-        { error: 'No profiles found to scrape' },
+        { error: errorMessage },
         { status: 404 }
       );
     }

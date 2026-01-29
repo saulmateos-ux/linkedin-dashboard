@@ -1,7 +1,7 @@
 # Architecture Decision Records (ADR)
 
 **Project**: LinkedIn Analytics Dashboard
-**Last Updated**: October 25, 2025
+**Last Updated**: November 12, 2025
 
 > **Auto-Update Instructions**: This file documents all significant architecture and technology decisions. When making a major design choice, add a new entry with date, decision, rationale, alternatives considered, and trade-offs.
 
@@ -612,6 +612,91 @@ See `.claude/docs/DESIGN-SYSTEM.md` for complete implementation guidelines, comp
    - Context: No automated tests yet
    - Options: Jest, Vitest, Playwright E2E
    - Status: Needed before major refactors
+
+---
+
+---
+
+## ADR-014: Vercel Cron Jobs for News Aggregation
+
+**Date**: November 12, 2025
+**Status**: Active
+
+### Decision
+Use Vercel Cron Jobs with Bearer token authentication to automate RSS feed aggregation every 4 hours.
+
+### Context
+News intelligence system needs to:
+- Fetch articles from 15 RSS feeds automatically
+- Run GPT-4 analysis on each article (relevance, sentiment, entities)
+- Store processed articles in database
+- Run reliably without manual intervention
+- Support manual triggering for emergencies
+
+### Rationale
+- **Vercel native** - Built into platform, no third-party services
+- **Serverless** - No infrastructure to manage
+- **Flexible scheduling** - Cron expression support (`0 */4 * * *`)
+- **Bearer token auth** - Secure, prevents unauthorized triggers
+- **5-minute timeout** - Sufficient for ~300 articles with GPT-4 analysis
+- **Manual fallback** - Can bypass auth in dev mode for testing
+
+### Implementation Details
+```typescript
+// vercel.json
+{
+  "crons": [
+    {
+      "path": "/api/cron/aggregate",
+      "schedule": "0 */4 * * *"  // Every 4 hours
+    }
+  ]
+}
+
+// Environment variable
+CRON_SECRET=cron_[64-char-hex]  // Must be set in Vercel dashboard
+
+// API route authentication
+const authHeader = request.headers.get('authorization');
+const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
+if (process.env.CRON_SECRET && authHeader && authHeader !== expectedAuth) {
+  return new Response('Unauthorized', { status: 401 });
+}
+```
+
+### Alternatives Considered
+1. **GitHub Actions cron** - Would work but requires separate workflow file, harder to test locally
+2. **External cron service (cron-job.org)** - Reliable but adds external dependency
+3. **Long-running process** - Not serverless-friendly, requires dedicated server
+4. **Vercel Edge Functions** - Can't use GPT-4 (needs Node.js runtime)
+
+### Trade-offs
+✅ **Pros**:
+- Zero infrastructure management
+- Integrated with Vercel deployments
+- No additional cost
+- Manual trigger option for testing
+- 5-minute execution window sufficient
+- Logs integrated with Vercel dashboard
+
+❌ **Cons**:
+- Tied to Vercel platform
+- Environment variable can be lost during migrations
+- Silent failures if not monitored
+- 5-minute max duration (could be limiting for larger datasets)
+
+### Manual Fallback Pattern
+Added `RefreshNewsButton` component:
+- Calls same `/api/cron/aggregate` endpoint
+- No auth required in development mode
+- Shows progress modal with stats
+- Critical UX when cron fails
+
+### Lessons Learned (Nov 2025)
+- **Template migrations can break cron jobs** - TailAdmin migration on Nov 4th removed `CRON_SECRET`, breaking automated fetches for 9 days
+- **Always add manual fallback** - Users need immediate control when automation fails
+- **Monitor last_fetched_at timestamps** - Easy way to detect cron failures
+- **Document environment variables** - Created `VERCEL-CRON-SETUP.md` for future reference
 
 ---
 

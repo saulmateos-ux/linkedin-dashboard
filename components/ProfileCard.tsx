@@ -41,6 +41,27 @@ const typeIcons = {
   other: '📌',
 };
 
+// Helper function to format relative time
+function getRelativeTime(date: Date | null): string {
+  if (!date) return 'Never';
+
+  const now = new Date();
+  const scraped = new Date(date);
+  const diffMs = now.getTime() - scraped.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo ago`;
+  return `${Math.floor(diffDays / 365)}y ago`;
+}
+
 export default function ProfileCard({ profile, postCount }: ProfileCardProps) {
   const router = useRouter();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -154,7 +175,7 @@ export default function ProfileCard({ profile, postCount }: ProfileCardProps) {
                 </Typography>
               )}
               {postCount !== undefined && (
-                <Typography variant="body2" color="text.secondary" fontSize="0.875rem">
+                <Typography variant="body2" color="text.secondary" fontSize="0.875rem" sx={{ mb: 0.5 }}>
                   <Box
                     component="span"
                     fontWeight={600}
@@ -166,6 +187,16 @@ export default function ProfileCard({ profile, postCount }: ProfileCardProps) {
                   posts
                 </Typography>
               )}
+              <Typography variant="body2" color="text.secondary" fontSize="0.875rem">
+                Last scraped:{' '}
+                <Box
+                  component="span"
+                  fontWeight={600}
+                  color="text.primary"
+                >
+                  {getRelativeTime(profile.last_scraped_at)}
+                </Box>
+              </Typography>
             </Box>
             <Box display="flex" flexDirection="column" gap={0.5} alignItems="flex-end">
               <MuiLink

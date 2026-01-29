@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import AppHeader from '@/layout/AppHeader';
 import AppSidebar from '@/layout/AppSidebar';
 import DynamicMain from '@/components/DynamicMain';
-import { getStats, getEngagementOverTime, getProfiles, getPrimaryProfile, getWorkspace, getWorkspaceStats, getWorkspacePosts, getWorkspaceProfiles, getEnhancedStats, getProfilePerformanceLeaderboard, getContentInsights, getTopPostsEnhanced } from '@/lib/db';
+import { getStats, getEngagementOverTime, getProfiles, getPrimaryProfile, getWorkspace, getWorkspaceStats, getWorkspacePosts, getWorkspaceProfiles, getEnhancedStats, getProfilePerformanceLeaderboard, getContentInsights, getTopPostsEnhanced, getYouTubeStats } from '@/lib/db';
 import Link from 'next/link';
 
 export const revalidate = 3600; // Revalidate every hour
@@ -71,6 +71,8 @@ export default async function Home({ searchParams }: PageProps) {
   }
 
   // Fetch data based on workspace or profile
+  const ytStats = await getYouTubeStats(workspaceId);
+
   let stats, enhancedStats, topPosts;
 
   if (workspace) {
@@ -199,6 +201,23 @@ export default async function Home({ searchParams }: PageProps) {
                 </div>
               </div>
             </div>
+
+            {/* YouTube Stats Card */}
+            {ytStats.total_videos > 0 && (
+              <div className="mb-6">
+                <Link href={workspaceId ? `/youtube?workspace=${workspaceId}` : '/youtube'}>
+                  <div className="rounded-sm border border-stroke bg-white px-7.5 py-6 shadow-default dark:border-strokedark dark:bg-boxdark hover:shadow-lg transition-shadow">
+                    <h4 className="text-lg font-semibold text-black dark:text-white mb-3">YouTube</h4>
+                    <div className="flex gap-6 text-sm">
+                      <span><strong>{ytStats.total_videos}</strong> videos</span>
+                      <span><strong>{ytStats.total_channels}</strong> channels</span>
+                      <span><strong>{ytStats.with_transcripts}</strong> transcripts</span>
+                      <span><strong>{ytStats.total_views.toLocaleString()}</strong> views</span>
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            )}
 
             {/* Top Posts Table */}
             <div className="rounded-sm border border-stroke bg-white p-7.5 shadow-default dark:border-strokedark dark:bg-boxdark">

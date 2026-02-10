@@ -1,11 +1,21 @@
+/**
+ * LinkedIn Cron: Non-blocking Apify trigger
+ *
+ * Runs daily at 6 AM UTC. Queries all profiles, groups by staleness,
+ * and starts Apify runs with start() (returns immediately).
+ * When Apify finishes, it POSTs results to /api/webhooks/apify.
+ *
+ * Total execution: <10 seconds (no timeout risk).
+ */
+
 import { NextResponse } from 'next/server';
+import { ApifyClient } from 'apify-client';
 import { getProfiles, groupProfilesByMaxPosts } from '@/lib/db';
 
-export const maxDuration = 300; // 5 minutes max
+export const maxDuration = 60; // Generous but this should finish in <10s
 
-// GET /api/cron/scrape-profiles - Scrape all LinkedIn profiles (called by daily cron)
 export async function GET(request: Request) {
-  // Verify cron secret (Vercel Cron authentication)
+  // Verify cron secret
   const authHeader = request.headers.get('authorization');
   const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
 
@@ -13,10 +23,19 @@ export async function GET(request: Request) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  console.log('[CRON] Starting LinkedIn profile scrape...');
+  console.log('[CRON] Starting LinkedIn profile scrape (non-blocking)...');
 
   try {
     const startTime = Date.now();
+
+    // Validate Apify key
+    const apiKey = process.env.APIFY_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { success: false, error: 'APIFY_API_KEY not configured' },
+        { status: 500 }
+      );
+    }
 
     // 1. Get all profiles
     const profiles = await getProfiles();
@@ -32,71 +51,83 @@ export async function GET(request: Request) {
 
     // 2. Group by staleness (smart batching)
     const groups = groupProfilesByMaxPosts(profiles);
-    console.log(`[CRON] ${groups.length} groups:`, groups.map(g => ({
-      group: g.groupName,
-      count: g.profiles.length,
-      maxPosts: g.maxPosts,
-    })));
+    console.log(
+      `[CRON] ${groups.length} groups:`,
+      groups.map((g) => ({
+        group: g.groupName,
+        count: g.profiles.length,
+        maxPosts: g.maxPosts,
+      }))
+    );
 
-    // 3. Call /api/scrape for each group
+    // 3. Build webhook URL
     const baseUrl = new URL(request.url).origin;
-    const groupResults = [];
+    const webhookUrl = `${baseUrl}/api/webhooks/apify`;
+    const webhookSecret = process.env.APIFY_WEBHOOK_SECRET;
+
+    // 4. Start Apify runs (non-blocking)
+    const client = new ApifyClient({ token: apiKey });
+    const actorId = 'harvestapi/linkedin-profile-posts';
+    const startedRuns = [];
 
     for (const group of groups) {
       if (group.profiles.length === 0) continue;
 
       try {
-        console.log(`[CRON] Scraping ${group.groupName}: ${group.profiles.length} profiles, ${group.maxPosts} posts each`);
+        const groupUrls = group.profiles.map((p) => p.profile_url);
 
-        const response = await fetch(`${baseUrl}/api/scrape`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            profileIds: group.profiles.map(p => p.id),
-          }),
+        console.log(
+          `[CRON] Starting ${group.groupName}: ${group.profiles.length} profiles, ${group.maxPosts} posts each`
+        );
+
+        // start() returns immediately with run metadata (doesn't wait for completion)
+        const run = await client.actor(actorId).start({
+          targetUrls: groupUrls,
+          maxPosts: group.maxPosts,
+        }, {
+          webhooks: [
+            {
+              eventTypes: ['ACTOR.RUN.SUCCEEDED' as const],
+              requestUrl: webhookUrl,
+              ...(webhookSecret
+                ? { headersTemplate: `{"X-Apify-Webhook-Secret": "${webhookSecret}"}` }
+                : {}),
+            },
+          ],
         });
 
-        const result = await response.json();
+        console.log(`[CRON] ${group.groupName} started: run ${run.id}`);
 
-        groupResults.push({
+        startedRuns.push({
           group: group.groupName,
           profileCount: group.profiles.length,
           maxPosts: group.maxPosts,
-          success: response.ok,
-          ...result,
-        });
-
-        console.log(`[CRON] ${group.groupName} done:`, {
-          success: response.ok,
-          newPosts: result.newPosts,
-          updatedPosts: result.updatedPosts,
+          runId: run.id,
         });
       } catch (error) {
-        console.error(`[CRON] ${group.groupName} failed:`, error);
-        groupResults.push({
+        console.error(`[CRON] Failed to start ${group.groupName}:`, error);
+        startedRuns.push({
           group: group.groupName,
           profileCount: group.profiles.length,
           maxPosts: group.maxPosts,
-          success: false,
           error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
     }
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-    const totalNew = groupResults.reduce((sum, r) => sum + (r.newPosts || 0), 0);
-    const totalUpdated = groupResults.reduce((sum, r) => sum + (r.updatedPosts || 0), 0);
-
-    console.log(`[CRON] Scrape completed in ${duration}s: ${totalNew} new, ${totalUpdated} updated`);
+    console.log(
+      `[CRON] All runs started in ${duration}s. Webhook will process results at ${webhookUrl}`
+    );
 
     return NextResponse.json({
       success: true,
       timestamp: new Date().toISOString(),
       duration: `${duration}s`,
       profilesTotal: profiles.length,
-      groups: groupResults,
-      totalNewPosts: totalNew,
-      totalUpdatedPosts: totalUpdated,
+      groupCount: groups.length,
+      runs: startedRuns,
+      webhookUrl,
     });
   } catch (error) {
     console.error('[CRON] Scrape failed:', error);

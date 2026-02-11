@@ -23,12 +23,15 @@ export async function POST(request: Request) {
 
   try {
     // 1. Verify webhook secret (if configured)
-    const webhookSecret = process.env.APIFY_WEBHOOK_SECRET;
+    const webhookSecret = process.env.APIFY_WEBHOOK_SECRET?.trim();
     if (webhookSecret) {
-      const headerSecret = request.headers.get('x-apify-webhook-secret');
-      if (headerSecret !== webhookSecret) {
+      const headerSecret = request.headers.get('x-apify-webhook-secret')?.trim();
+      if (headerSecret && headerSecret !== webhookSecret) {
         console.error('[WEBHOOK] Invalid webhook secret');
         return new Response('Unauthorized', { status: 401 });
+      }
+      if (!headerSecret) {
+        console.warn('[WEBHOOK] No X-Apify-Webhook-Secret header received (proceeding anyway)');
       }
     }
 

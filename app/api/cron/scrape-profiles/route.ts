@@ -5,12 +5,15 @@
  * and starts Apify runs with start() (returns immediately).
  * When Apify finishes, it POSTs results to /api/webhooks/apify.
  *
+ * Includes monthly budget cap to prevent silent credit exhaustion.
  * Total execution: <10 seconds (no timeout risk).
  */
 
 import { NextResponse } from 'next/server';
 import { ApifyClient } from 'apify-client';
-import { getProfiles, groupProfilesByMaxPosts } from '@/lib/db';
+import { getProfiles, groupProfilesByMaxPosts, queryDatabase } from '@/lib/db';
+
+const COST_PER_POST = 0.002; // $0.002 per post on Apify
 
 export const maxDuration = 60; // Generous but this should finish in <10s
 
@@ -60,12 +63,48 @@ export async function GET(request: Request) {
       }))
     );
 
-    // 3. Build webhook URL
+    // 3. Budget cap check
+    const monthlyBudget = parseFloat(process.env.APIFY_MONTHLY_BUDGET || '35');
+
+    // Count posts scraped this month to estimate month-to-date spend
+    const mtdResult = await queryDatabase(
+      `SELECT COUNT(*) as count FROM posts WHERE scraped_at >= date_trunc('month', NOW())`
+    ) as { count: string }[];
+    const mtdPosts = parseInt(mtdResult[0]?.count || '0', 10);
+    const mtdSpend = mtdPosts * COST_PER_POST;
+
+    // Estimate cost of this batch
+    const batchPosts = groups.reduce(
+      (sum, g) => sum + g.profiles.length * g.maxPosts, 0
+    );
+    const batchEstimatedCost = batchPosts * COST_PER_POST;
+    const projectedTotal = mtdSpend + batchEstimatedCost;
+
+    console.log(
+      `[CRON] Budget: MTD $${mtdSpend.toFixed(2)} (${mtdPosts} posts) + batch $${batchEstimatedCost.toFixed(2)} (${batchPosts} est. posts) = $${projectedTotal.toFixed(2)} / $${monthlyBudget} cap`
+    );
+
+    if (projectedTotal > monthlyBudget) {
+      console.warn(`[CRON] SKIPPING: projected $${projectedTotal.toFixed(2)} exceeds $${monthlyBudget} monthly budget`);
+      return NextResponse.json({
+        success: false,
+        skipped: true,
+        reason: 'Monthly budget cap exceeded',
+        monthlyBudget,
+        mtdSpend: parseFloat(mtdSpend.toFixed(2)),
+        mtdPosts,
+        batchEstimatedCost: parseFloat(batchEstimatedCost.toFixed(2)),
+        projectedTotal: parseFloat(projectedTotal.toFixed(2)),
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // 4. Build webhook URL
     const baseUrl = new URL(request.url).origin;
     const webhookUrl = `${baseUrl}/api/webhooks/apify`;
-    const webhookSecret = process.env.APIFY_WEBHOOK_SECRET;
+    const webhookSecret = process.env.APIFY_WEBHOOK_SECRET?.trim();
 
-    // 4. Start Apify runs (non-blocking)
+    // 5. Start Apify runs (non-blocking)
     const client = new ApifyClient({ token: apiKey });
     const actorId = 'harvestapi/linkedin-profile-posts';
     const startedRuns = [];
@@ -73,11 +112,13 @@ export async function GET(request: Request) {
     for (const group of groups) {
       if (group.profiles.length === 0) continue;
 
+      const groupEstimatedCost = group.profiles.length * group.maxPosts * COST_PER_POST;
+
       try {
         const groupUrls = group.profiles.map((p) => p.profile_url);
 
         console.log(
-          `[CRON] Starting ${group.groupName}: ${group.profiles.length} profiles, ${group.maxPosts} posts each`
+          `[CRON] Starting ${group.groupName}: ${group.profiles.length} profiles, ${group.maxPosts} posts each (~$${groupEstimatedCost.toFixed(2)})`
         );
 
         // start() returns immediately with run metadata (doesn't wait for completion)
@@ -90,7 +131,7 @@ export async function GET(request: Request) {
               eventTypes: ['ACTOR.RUN.SUCCEEDED' as const],
               requestUrl: webhookUrl,
               ...(webhookSecret
-                ? { headersTemplate: `{"X-Apify-Webhook-Secret": "${webhookSecret}"}` }
+                ? { headersTemplate: JSON.stringify({ 'X-Apify-Webhook-Secret': webhookSecret }) }
                 : {}),
             },
           ],
@@ -102,6 +143,7 @@ export async function GET(request: Request) {
           group: group.groupName,
           profileCount: group.profiles.length,
           maxPosts: group.maxPosts,
+          estimatedCost: parseFloat(groupEstimatedCost.toFixed(2)),
           runId: run.id,
         });
       } catch (error) {
@@ -110,6 +152,7 @@ export async function GET(request: Request) {
           group: group.groupName,
           profileCount: group.profiles.length,
           maxPosts: group.maxPosts,
+          estimatedCost: parseFloat(groupEstimatedCost.toFixed(2)),
           error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
@@ -126,6 +169,13 @@ export async function GET(request: Request) {
       duration: `${duration}s`,
       profilesTotal: profiles.length,
       groupCount: groups.length,
+      budget: {
+        monthlyBudget,
+        mtdSpend: parseFloat(mtdSpend.toFixed(2)),
+        mtdPosts,
+        batchEstimatedCost: parseFloat(batchEstimatedCost.toFixed(2)),
+        projectedTotal: parseFloat(projectedTotal.toFixed(2)),
+      },
       runs: startedRuns,
       webhookUrl,
     });

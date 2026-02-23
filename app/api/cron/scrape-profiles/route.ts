@@ -109,52 +109,65 @@ export async function GET(request: Request) {
     const actorId = 'harvestapi/linkedin-profile-posts';
     const startedRuns = [];
 
+    const APIFY_MAX_URLS = 50;
+
     for (const group of groups) {
       if (group.profiles.length === 0) continue;
 
-      const groupEstimatedCost = group.profiles.length * group.maxPosts * COST_PER_POST;
+      // Split into chunks of 50 (Apify targetUrls limit)
+      const allUrls = group.profiles.map((p) => p.profile_url);
+      const chunks: string[][] = [];
+      for (let i = 0; i < allUrls.length; i += APIFY_MAX_URLS) {
+        chunks.push(allUrls.slice(i, i + APIFY_MAX_URLS));
+      }
 
-      try {
-        const groupUrls = group.profiles.map((p) => p.profile_url);
+      for (let chunkIdx = 0; chunkIdx < chunks.length; chunkIdx++) {
+        const chunkUrls = chunks[chunkIdx];
+        const chunkLabel = chunks.length > 1
+          ? `${group.groupName} [${chunkIdx + 1}/${chunks.length}]`
+          : group.groupName;
+        const chunkEstimatedCost = chunkUrls.length * group.maxPosts * COST_PER_POST;
 
-        console.log(
-          `[CRON] Starting ${group.groupName}: ${group.profiles.length} profiles, ${group.maxPosts} posts each (~$${groupEstimatedCost.toFixed(2)})`
-        );
+        try {
+          console.log(
+            `[CRON] Starting ${chunkLabel}: ${chunkUrls.length} profiles, ${group.maxPosts} posts each (~$${chunkEstimatedCost.toFixed(2)})`
+          );
 
-        // start() returns immediately with run metadata (doesn't wait for completion)
-        const run = await client.actor(actorId).start({
-          targetUrls: groupUrls,
-          maxPosts: group.maxPosts,
-        }, {
-          webhooks: [
-            {
-              eventTypes: ['ACTOR.RUN.SUCCEEDED' as const],
-              requestUrl: webhookUrl,
-              ...(webhookSecret
-                ? { headersTemplate: JSON.stringify({ 'X-Apify-Webhook-Secret': webhookSecret }) }
-                : {}),
-            },
-          ],
-        });
+          // start() returns immediately with run metadata (doesn't wait for completion)
+          const run = await client.actor(actorId).start({
+            targetUrls: chunkUrls,
+            maxPosts: group.maxPosts,
+          }, {
+            webhooks: [
+              {
+                eventTypes: ['ACTOR.RUN.SUCCEEDED' as const],
+                requestUrl: webhookUrl,
+                ...(webhookSecret
+                  ? { headersTemplate: JSON.stringify({ 'X-Apify-Webhook-Secret': webhookSecret }) }
+                  : {}),
+              },
+            ],
+          });
 
-        console.log(`[CRON] ${group.groupName} started: run ${run.id}`);
+          console.log(`[CRON] ${chunkLabel} started: run ${run.id}`);
 
-        startedRuns.push({
-          group: group.groupName,
-          profileCount: group.profiles.length,
-          maxPosts: group.maxPosts,
-          estimatedCost: parseFloat(groupEstimatedCost.toFixed(2)),
-          runId: run.id,
-        });
-      } catch (error) {
-        console.error(`[CRON] Failed to start ${group.groupName}:`, error);
-        startedRuns.push({
-          group: group.groupName,
-          profileCount: group.profiles.length,
-          maxPosts: group.maxPosts,
-          estimatedCost: parseFloat(groupEstimatedCost.toFixed(2)),
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
+          startedRuns.push({
+            group: chunkLabel,
+            profileCount: chunkUrls.length,
+            maxPosts: group.maxPosts,
+            estimatedCost: parseFloat(chunkEstimatedCost.toFixed(2)),
+            runId: run.id,
+          });
+        } catch (error) {
+          console.error(`[CRON] Failed to start ${chunkLabel}:`, error);
+          startedRuns.push({
+            group: chunkLabel,
+            profileCount: chunkUrls.length,
+            maxPosts: group.maxPosts,
+            estimatedCost: parseFloat(chunkEstimatedCost.toFixed(2)),
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
       }
     }
 

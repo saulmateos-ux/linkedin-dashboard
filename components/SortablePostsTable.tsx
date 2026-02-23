@@ -166,6 +166,26 @@ export default function SortablePostsTable({ posts, title = "Top Posts", showAll
                     </MuiLink>
                   </TableCell>
                   <TableCell>
+                    <Box display="flex" alignItems="center" gap={0.75}>
+                      <Box
+                        component="span"
+                        sx={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          px: 0.75,
+                          py: 0.25,
+                          borderRadius: '4px',
+                          fontSize: '0.625rem',
+                          fontWeight: 700,
+                          letterSpacing: '0.5px',
+                          lineHeight: 1,
+                          color: '#fff',
+                          bgcolor: post.platform === 'youtube' ? '#FF0000' : '#0A66C2',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {post.platform === 'youtube' ? 'YT' : 'LI'}
+                      </Box>
                     {post.profile_id ? (
                       <MuiLink
                         component={Link}
@@ -189,6 +209,7 @@ export default function SortablePostsTable({ posts, title = "Top Posts", showAll
                         {post.author_name || post.author_username || 'Unknown'}
                       </Typography>
                     )}
+                    </Box>
                   </TableCell>
                   <TableCell>
                     {post.company_name && post.company_id ? (

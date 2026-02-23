@@ -64,6 +64,19 @@ const navItems: NavItem[] = [
   },
 ];
 
+const youtubeItems: NavItem[] = [
+  {
+    icon: <CalenderIcon />,
+    name: "Videos",
+    path: "/youtube",
+  },
+  {
+    icon: <UserCircleIcon />,
+    name: "Channels",
+    path: "/youtube/channels",
+  },
+];
+
 const othersItems: NavItem[] = [
   {
     icon: <PieChartIcon />,
@@ -342,6 +355,23 @@ const AppSidebar: React.FC = () => {
                 )}
               </h2>
               {renderMenuItems(navItems, "main")}
+            </div>
+
+            <div className="">
+              <h2
+                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
+                  !isExpanded && !isHovered
+                    ? "lg:justify-center"
+                    : "justify-start"
+                }`}
+              >
+                {isExpanded || isHovered || isMobileOpen ? (
+                  "YouTube"
+                ) : (
+                  <HorizontaLDots />
+                )}
+              </h2>
+              {renderMenuItems(youtubeItems, "others")}
             </div>
 
             <div className="">

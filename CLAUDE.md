@@ -2,16 +2,17 @@
 
 Guidelines for AI assistants working on the LinkedIn Analytics Dashboard project.
 
-**Version**: 0.6.0 (Optimized & Streamlined)
-**Last Updated**: January 8, 2025
+**Version**: 0.7.0 (YouTube Dashboard Indicators)
+**Last Updated**: January 29, 2026
 
 ---
 
 ## Project Overview
 
-A Next.js dashboard for analyzing LinkedIn posts with AI-powered insights.
+A Next.js dashboard for analyzing LinkedIn and YouTube content with AI-powered insights.
 
 **Key Features**:
+- Multi-platform support (LinkedIn posts + YouTube videos)
 - Multi-profile tracking (personal + competitors + companies + team)
 - Workspace organization with batch scraping (6 profiles in parallel)
 - Automated news aggregation (RSS + GPT-4 analysis every 4 hours)
@@ -51,6 +52,8 @@ app/
   insights/page.tsx           # AI Assistant
   profiles/                   # Profile management
   posts/page.tsx              # All posts view
+  youtube/page.tsx            # YouTube overview
+  youtube/channels/page.tsx   # YouTube channels
   workspaces/page.tsx         # Workspace management
   layout.tsx                  # Root layout with WorkspaceProvider
   api/
@@ -234,7 +237,7 @@ npx shadcn@latest add [component-name]
 
 **5 Tables**:
 - `profiles` - LinkedIn profiles (personal + company + team)
-- `posts` - LinkedIn posts with engagement metrics
+- `posts` - LinkedIn posts + YouTube videos with engagement metrics (`platform` field: 'linkedin' or 'youtube')
 - `scraping_runs` - Scraping operation history
 - `workspaces` - Workspace definitions
 - `workspace_profiles` - Many-to-many join table
@@ -519,7 +522,12 @@ curl -X POST http://localhost:3000/api/ai-query \
 
 **See `.claude/tracking/progress.md` for detailed changelog.**
 
-**Current Version**: 0.6.0 (January 2025)
+**Current Version**: 0.7.0 (January 2026)
+- YouTube dashboard indicators (sidebar nav, platform badges, profile pills)
+- Multi-platform support (LinkedIn + YouTube)
+- `/youtube` and `/youtube/channels` routes
+
+**Previous Version**: 0.6.0 (January 2025)
 - Optimized CLAUDE.md (1,221 → ~450 lines, 63% reduction)
 - Removed redundant workspace documentation
 - Condensed verbose sections
@@ -538,4 +546,4 @@ curl -X POST http://localhost:3000/api/ai-query \
 
 **Remember**: Keep it simple, follow the patterns, and refer to documentation when unsure.
 
-**Last Updated**: January 8, 2025
+**Last Updated**: January 29, 2026

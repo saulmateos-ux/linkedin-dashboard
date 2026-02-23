@@ -3,6 +3,7 @@
  *
  * Receives POST from Apify when a scraping run completes (ACTOR.RUN.SUCCEEDED).
  * Fetches the dataset items and processes them into the posts table.
+ * Auto-detects platform (LinkedIn vs YouTube) from dataset item shape.
  *
  * Apify default webhook payload:
  * {
@@ -15,6 +16,7 @@ import { NextResponse } from 'next/server';
 import { ApifyClient } from 'apify-client';
 import { getProfiles, updateProfilesLastScraped, pool } from '@/lib/db';
 import { processApifyPosts } from '@/lib/process-posts';
+import { processYouTubeVideos } from '@/lib/process-youtube';
 
 export const maxDuration = 60; // Dataset fetch + DB upserts should be <30s
 
@@ -85,12 +87,29 @@ export async function POST(request: Request) {
       profileMap.set(p.display_name.toLowerCase(), p.id);
     }
 
-    // 5. Process posts
-    const result = await processApifyPosts(
-      items as Record<string, unknown>[],
-      profileMap,
-      pool
-    );
+    // 5. Detect platform from dataset items and route to correct processor
+    const firstItem = items[0] as Record<string, unknown>;
+    const isYouTube = !!(firstItem.channelName || firstItem.channelUrl || firstItem.videoUrl ||
+      (typeof firstItem.url === 'string' && (firstItem.url as string).includes('youtube.com')));
+    const platform = isYouTube ? 'youtube' : 'linkedin';
+
+    console.log(`[WEBHOOK] Detected platform: ${platform}`);
+
+    let result: { newPosts: number; updatedPosts: number; matchedProfileIds: number[] };
+
+    if (isYouTube) {
+      result = await processYouTubeVideos(
+        items as Record<string, unknown>[],
+        profileMap,
+        pool
+      );
+    } else {
+      result = await processApifyPosts(
+        items as Record<string, unknown>[],
+        profileMap,
+        pool
+      );
+    }
 
     console.log(`[WEBHOOK] Processed: ${result.newPosts} new, ${result.updatedPosts} updated, ${result.matchedProfileIds.length} profiles matched`);
 
@@ -102,6 +121,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
+      platform,
       runId: resource.id,
       datasetId,
       itemsFetched: items.length,

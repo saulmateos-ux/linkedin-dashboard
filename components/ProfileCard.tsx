@@ -98,6 +98,19 @@ export default function ProfileCard({ profile, postCount }: ProfileCardProps) {
                 {profile.is_company && (
                   <Business sx={{ fontSize: 20, color: 'primary.main' }} titleAccess="Company Page" />
                 )}
+                {profile.username?.startsWith('@') && (
+                  <Chip
+                    label="YouTube"
+                    size="small"
+                    sx={{
+                      height: 20,
+                      fontSize: '0.625rem',
+                      fontWeight: 700,
+                      bgcolor: '#FF0000',
+                      color: '#fff',
+                    }}
+                  />
+                )}
               </Box>
               <Typography variant="body2" color="text.secondary" fontSize="0.875rem">
                 @{profile.username}

@@ -246,6 +246,7 @@ export default async function Home({ searchParams }: PageProps) {
                   <thead>
                     <tr className="bg-gray-2 text-left dark:bg-meta-4">
                       <th className="px-4 py-4 font-medium text-black dark:text-white">Content</th>
+                      <th className="px-4 py-4 font-medium text-black dark:text-white">Platform</th>
                       <th className="px-4 py-4 font-medium text-black dark:text-white">Author</th>
                       <th className="px-4 py-4 font-medium text-black dark:text-white">Published</th>
                       <th className="px-4 py-4 font-medium text-black dark:text-white">Likes</th>
@@ -261,6 +262,11 @@ export default async function Home({ searchParams }: PageProps) {
                           <p className="text-sm text-black dark:text-white line-clamp-2">
                             {post.content?.substring(0, 100)}...
                           </p>
+                        </td>
+                        <td className="px-4 py-5">
+                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold text-white ${post.platform === 'youtube' ? 'bg-red-600' : 'bg-[#0A66C2]'}`}>
+                            {post.platform === 'youtube' ? 'YT' : 'LI'}
+                          </span>
                         </td>
                         <td className="px-4 py-5">
                           <p className="text-sm text-black dark:text-white">{post.author_name}</p>

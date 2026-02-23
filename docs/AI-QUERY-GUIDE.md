@@ -51,6 +51,7 @@ curl "https://your-project.data.neon.tech/posts?limit=10" \
     "comments": 8,
     "shares": 3,
     "engagement_total": 53,
+    "platform": "linkedin",
     "hashtags": ["#productlaunch", "#startup"]
   }
 ]
@@ -92,7 +93,7 @@ https://<project-name>.data.neon.tech
 
 | Endpoint | Description | Type |
 |----------|-------------|------|
-| `/posts` | All LinkedIn posts | Table |
+| `/posts` | All posts (LinkedIn + YouTube) | Table |
 | `/profiles` | Profile information | Table |
 | `/top_performers` | Best performing posts | View |
 | `/trending_hashtags` | Popular hashtags (last 30 days) | Materialized View |
@@ -235,35 +236,47 @@ curl "https://your-project.data.neon.tech/posts?hashtags=cs.{\"#AI\"}&order=enga
 
 Note: `cs` means "contains" for JSON array fields.
 
-### 6. Get Posts by Specific Profile
+### 6. Filter by Platform
+
+```bash
+# LinkedIn posts only
+curl "https://your-project.data.neon.tech/posts?platform=eq.linkedin&order=published_at.desc&limit=20" \
+  -H "Authorization: Bearer $TOKEN"
+
+# YouTube videos only
+curl "https://your-project.data.neon.tech/posts?platform=eq.youtube&order=published_at.desc&limit=20" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+### 7. Get Posts by Specific Profile
 
 ```bash
 curl "https://your-project.data.neon.tech/posts?profile_id=eq.1&order=published_at.desc&limit=50" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-### 7. High-Performing Posts (> 100 likes)
+### 8. High-Performing Posts (> 100 likes)
 
 ```bash
 curl "https://your-project.data.neon.tech/posts?likes=gt.100&order=likes.desc" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-### 8. Posts with Media
+### 9. Posts with Media
 
 ```bash
 curl "https://your-project.data.neon.tech/posts?media_type=neq.text&order=engagement_total.desc" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-### 9. Count Posts by Author
+### 10. Count Posts by Author
 
 ```bash
 curl "https://your-project.data.neon.tech/posts?select=author_name,count()&group=author_name" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-### 10. Get Full Post Details
+### 11. Get Full Post Details
 
 ```bash
 curl "https://your-project.data.neon.tech/posts?id=eq.7253594866513752064&select=*" \
@@ -990,6 +1003,6 @@ This guide enables AI tools to query your LinkedIn data directly via HTTP, witho
 
 **Questions or issues?** See [PLAN.md](../PLAN.md) for implementation details or [CLAUDE.md](../CLAUDE.md) for project architecture.
 
-**Last Updated:** October 16, 2025
-**Version:** 1.0
+**Last Updated:** January 29, 2026
+**Version:** 1.1
 **Status:** Production Ready

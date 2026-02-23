@@ -25,6 +25,7 @@ export interface Post {
   hashtags: string[];
   media_type: string;
   profile_id?: number;
+  platform?: string;
 }
 
 export interface Profile {
@@ -1442,21 +1443,21 @@ export function getDaysSinceLastScrape(lastScrapedAt: Date | null): number | nul
  */
 export function calculateSmartMaxPosts(profile: Profile): number {
   if (!profile.last_scraped_at) {
-    return 100; // Initial scrape
+    return 50; // Initial scrape
   }
 
   const daysSince = getDaysSinceLastScrape(profile.last_scraped_at);
 
   if (daysSince === null) {
-    return 100; // Treat as initial scrape
+    return 50; // Treat as initial scrape
   }
 
   if (daysSince <= 7) {
-    return 7; // Weekly update
+    return 3; // Weekly update
   } else if (daysSince <= 30) {
-    return 30; // Catch-up scrape
+    return 10; // Catch-up scrape
   } else {
-    return 100; // Full refresh
+    return 25; // Full refresh
   }
 }
 
@@ -1471,9 +1472,10 @@ export interface ProfileGroup {
  */
 export function groupProfilesByMaxPosts(profiles: Profile[]): ProfileGroup[] {
   const groups: { [key: number]: Profile[] } = {
-    100: [], // Initial + Full refresh
-    30: [],  // Catch-up
-    7: [],   // Weekly
+    50: [],  // Initial scrape
+    25: [],  // Full refresh (>30 days)
+    10: [],  // Catch-up (8-30 days)
+    3: [],   // Weekly (≤7 days)
   };
 
   profiles.forEach(profile => {
@@ -1483,39 +1485,34 @@ export function groupProfilesByMaxPosts(profiles: Profile[]): ProfileGroup[] {
 
   const result: ProfileGroup[] = [];
 
-  if (groups[100].length > 0) {
-    const initials = groups[100].filter(p => !p.last_scraped_at);
-    const refreshes = groups[100].filter(p => p.last_scraped_at);
-
-    if (initials.length > 0) {
-      result.push({
-        profiles: initials,
-        maxPosts: 100,
-        groupName: 'initial'
-      });
-    }
-
-    if (refreshes.length > 0) {
-      result.push({
-        profiles: refreshes,
-        maxPosts: 100,
-        groupName: 'refresh'
-      });
-    }
+  if (groups[50].length > 0) {
+    result.push({
+      profiles: groups[50],
+      maxPosts: 50,
+      groupName: 'initial'
+    });
   }
 
-  if (groups[30].length > 0) {
+  if (groups[25].length > 0) {
     result.push({
-      profiles: groups[30],
-      maxPosts: 30,
+      profiles: groups[25],
+      maxPosts: 25,
+      groupName: 'refresh'
+    });
+  }
+
+  if (groups[10].length > 0) {
+    result.push({
+      profiles: groups[10],
+      maxPosts: 10,
       groupName: 'catchup'
     });
   }
 
-  if (groups[7].length > 0) {
+  if (groups[3].length > 0) {
     result.push({
-      profiles: groups[7],
-      maxPosts: 7,
+      profiles: groups[3],
+      maxPosts: 3,
       groupName: 'weekly'
     });
   }
@@ -1952,7 +1949,8 @@ export async function getTopPostsEnhanced(options: {
     SELECT
       id, post_url, content, content_preview, author_name, author_username,
       author_profile_url, published_at, likes, comments, shares, views,
-      engagement_rate, engagement_total, hashtags, media_type, profile_id
+      engagement_rate, engagement_total, hashtags, media_type, profile_id,
+      COALESCE(platform, 'linkedin') as platform
     FROM posts
     ${whereClause}
     ORDER BY ${sortBy} ${order.toUpperCase()}

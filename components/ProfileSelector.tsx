@@ -39,6 +39,7 @@ export default function ProfileSelector({ profiles, currentProfileId }: ProfileS
       {profiles.map((profile) => (
         <option key={profile.id} value={profile.id}>
           {profile.is_primary && '⭐ '}
+          {profile.username?.startsWith('@') && '📺 '}
           {profile.display_name}
         </option>
       ))}
